@@ -300,6 +300,83 @@
       font-size: 11px;
     }
 
+    /* 多图片网格预览 */
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      padding: 8px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      min-height: 80px;
+    }
+
+    .preview-item {
+      position: relative;
+      aspect-ratio: 1;
+      border: 1px dashed var(--line);
+      border-radius: 6px;
+      overflow: hidden;
+      background: #fafafa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .preview-item.empty {
+      color: var(--muted);
+      font-size: 11px;
+      text-align: center;
+      padding: 8px;
+    }
+
+    /* 提示信息不占用整行，只显示在底部 */
+    .preview-item.info-hint {
+      grid-column: 1 / -1;
+      aspect-ratio: auto;
+      min-height: auto;
+      padding: 6px 8px;
+      border: none;
+      background: transparent;
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    .preview-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .preview-item .remove-btn {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(183, 32, 37, 0.9);
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 20px;
+      text-align: center;
+      padding: 0;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .preview-item:hover .remove-btn {
+      opacity: 1;
+    }
+
+    .preview-item .remove-btn:hover {
+      background: var(--accent);
+    }
+
     .preview img {
       width: 64px;
       height: 64px;
@@ -637,22 +714,28 @@
 
             <div class="file-grid" id="fileGrid">
               <div class="file-row">
-                <strong>角色参考图</strong>
-                <input type="file" accept="image/*" data-role="角色参考图" />
+                <strong>角色参考图（最多9张）</strong>
+                <input type="file" accept="image/*" data-role="角色参考图" multiple />
                 <input placeholder="用途说明：如图1作为主角参考，保持五官、发型、服装、体态和气质一致" data-desc />
-                <div class="preview"><span></span><em>未选择图片</em></div>
+                <div class="preview-grid" data-preview-role="角色参考图">
+                  <div class="preview-item empty"><span></span><em>未选择图片</em></div>
+                </div>
               </div>
               <div class="file-row">
-                <strong>场景参考图</strong>
-                <input type="file" accept="image/*" data-role="场景参考图" />
+                <strong>场景参考图（最多9张）</strong>
+                <input type="file" accept="image/*" data-role="场景参考图" multiple />
                 <input placeholder="用途说明：如图2作为场景参考，保持建筑、空间、材质、灯光一致" data-desc />
-                <div class="preview"><span></span><em>未选择图片</em></div>
+                <div class="preview-grid" data-preview-role="场景参考图">
+                  <div class="preview-item empty"><span></span><em>未选择图片</em></div>
+                </div>
               </div>
               <div class="file-row">
-                <strong>版式参考图</strong>
-                <input type="file" accept="image/*" data-role="版式参考图" />
+                <strong>版式参考图（最多9张）</strong>
+                <input type="file" accept="image/*" data-role="版式参考图" multiple />
                 <input placeholder="用途说明：如图3只作为排版参考，不改变剧情和场景" data-desc />
-                <div class="preview"><span></span><em>未选择图片</em></div>
+                <div class="preview-grid" data-preview-role="版式参考图">
+                  <div class="preview-item empty"><span></span><em>未选择图片</em></div>
+                </div>
               </div>
             </div>
 
@@ -712,6 +795,7 @@
               <div class="copy-row">
                 <strong>分镜图片提示词</strong>
                 <button class="btn secondary" data-copy="imagePrompt" type="button">复制</button>
+                <button class="btn" id="openImageStudio" type="button" style="background: linear-gradient(135deg, #6366f1, #7c8aff); border: none;">🎨 生成图像</button>
               </div>
               <textarea id="imagePrompt" readonly placeholder="生成后显示"></textarea>
               <div class="status" id="imageCopyStatus"></div>
@@ -1201,17 +1285,92 @@ cinematic realism, smooth camera motion, natural motion, sharp face, sharp hands
 
     function setupFilePreviews() {
       document.querySelectorAll("input[type=file]").forEach(input => {
+        // 为每个输入框创建一个文件数组来存储所有选择的文件
+        if (!input.filesList) {
+          input.filesList = [];
+        }
+
         input.addEventListener("change", () => {
-          const file = input.files[0];
-          const preview = input.closest(".file-row").querySelector(".preview");
-          if (!file) {
-            preview.innerHTML = "<span></span><em>未选择图片</em>";
+          const newFiles = Array.from(input.files);
+          const role = input.dataset.role;
+          const previewGrid = input.closest(".file-row").querySelector(".preview-grid");
+
+          if (!newFiles || newFiles.length === 0) {
+            // 如果没有新文件但有已存储的文件，显示已存储的
+            if (input.filesList.length > 0) {
+              renderPreviews(input, previewGrid);
+            } else {
+              previewGrid.innerHTML = '<div class="preview-item empty"><span></span><em>未选择图片</em></div>';
+            }
             return;
           }
-          const url = URL.createObjectURL(file);
-          preview.innerHTML = `<img alt="" src="${url}"><em>${file.name}</em>`;
+
+          // 将新文件添加到已存储的文件列表
+          newFiles.forEach(file => {
+            // 检查是否已存在同名文件
+            const exists = input.filesList.some(f => f.name === file.name && f.size === file.size);
+            if (!exists && input.filesList.length < 9) {
+              input.filesList.push(file);
+            }
+          });
+
+          // 渲染预览
+          renderPreviews(input, previewGrid);
         });
       });
+    }
+
+    function renderPreviews(input, previewGrid) {
+      const files = input.filesList;
+      const maxFiles = 9;
+
+      // 清空预览区域
+      previewGrid.innerHTML = '';
+
+      if (files.length === 0) {
+        previewGrid.innerHTML = '<div class="preview-item empty"><span></span><em>未选择图片</em></div>';
+        return;
+      }
+
+      // 为每个文件创建预览
+      files.forEach((file, index) => {
+        const url = URL.createObjectURL(file);
+        const previewItem = document.createElement('div');
+        previewItem.className = 'preview-item';
+        previewItem.innerHTML = `
+          <img alt="${file.name}" src="${url}" title="${file.name}">
+          <button class="remove-btn" data-index="${index}" title="删除">×</button>
+        `;
+
+        // 删除按钮事件
+        const removeBtn = previewItem.querySelector('.remove-btn');
+        removeBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+
+          // 从文件列表中移除
+          input.filesList.splice(index, 1);
+
+          // 重新渲染
+          renderPreviews(input, previewGrid);
+        });
+
+        previewGrid.appendChild(previewItem);
+      });
+
+      // 如果已达到最大数量，显示提示
+      if (files.length >= maxFiles) {
+        const warningItem = document.createElement('div');
+        warningItem.className = 'preview-item info-hint';
+        warningItem.innerHTML = `<em>✅ 已添加 ${files.length} 张（已达上限）</em>`;
+        previewGrid.appendChild(warningItem);
+      } else {
+        // 显示还可以添加的数量
+        const infoItem = document.createElement('div');
+        infoItem.className = 'preview-item info-hint';
+        infoItem.innerHTML = `<em>已添加 ${files.length} 张，还可添加 ${maxFiles - files.length} 张</em>`;
+        previewGrid.appendChild(infoItem);
+      }
     }
 
     async function copyText(text) {
@@ -1253,6 +1412,29 @@ cinematic realism, smooth camera motion, natural motion, sharp face, sharp hands
     $("testApi").addEventListener("click", testApiConfig);
     $("reset").addEventListener("click", resetAll);
     $("loadDemo").addEventListener("click", loadDemo);
+
+    // 生成图像按钮
+    $("openImageStudio").addEventListener("click", () => {
+      const prompt = $("imagePrompt").value;
+      if (!prompt) {
+        alert("请先生成分镜提示词！");
+        return;
+      }
+
+      // 复制提示词到剪贴板
+      navigator.clipboard.writeText(prompt).then(() => {
+        // 打开 Image Studio（替换为你的实际域名）
+        const imageStudioUrl = "https://你的image-studio域名.railway.app";
+        window.open(imageStudioUrl, "_blank");
+
+        // 提示用户
+        alert("✅ 提示词已复制到剪贴板！\n\n请在新打开的窗口中：\n1. 粘贴提示词（Ctrl+V 或 Cmd+V）\n2. 选择合适的尺寸和参数\n3. 点击生成");
+      }).catch(err => {
+        console.error("复制失败:", err);
+        alert("复制失败，请手动复制提示词");
+      });
+    });
+
     loadApiConfig();
     setupFilePreviews();
     setupCopy();
