@@ -199,7 +199,11 @@ def llm_analyze_script(payload, include_parts=False):
     return parsed
 
 
-def infer_character_setting(script):
+def infer_character_setting(script, has_refs=False):
+    # 如果没有参考图，返回空字符串
+    if not has_refs:
+        return ""
+
     text = re.sub(r"\s+", " ", script or "").strip()
     if not text:
         return "核心角色：根据剧本主体统一设计，保持同一人物的五官、发型、服装、体型、年龄和气质连续一致。"
@@ -241,7 +245,11 @@ def infer_character_setting(script):
     return "\n".join(lines)
 
 
-def infer_scene_setting(script):
+def infer_scene_setting(script, has_refs=False):
+    # 如果没有参考图，返回空字符串
+    if not has_refs:
+        return ""
+
     text = re.sub(r"\s+", " ", script or "").strip()
     if not text:
         return "核心场景：根据剧本统一设计一个连续空间，明确入口、纵深、主光方向、道具位置和角色行动区域。"
@@ -466,15 +474,20 @@ def generate_payload(payload):
             llm_result = llm_analyze_script(payload, include_parts=True)
         except Exception as exc:
             llm_error = f"{type(exc).__name__}: {exc}"
+
+    # 检查是否有参考图
+    refs = payload.get("refs", [])
+    has_refs = any(ref.get("name") != "未上传" for ref in refs if isinstance(ref, dict))
+
     inferred_character = (
         payload.get("character")
         or (llm_result or {}).get("character")
-        or infer_character_setting(payload.get("script", ""))
+        or infer_character_setting(payload.get("script", ""), has_refs=has_refs)
     )
     inferred_scene = (
         payload.get("scene")
         or (llm_result or {}).get("scene")
-        or infer_scene_setting(payload.get("script", ""))
+        or infer_scene_setting(payload.get("script", ""), has_refs=has_refs)
     )
     enriched_payload = dict(payload)
     enriched_payload["character"] = inferred_character
@@ -513,13 +526,18 @@ def generate_extract_payload(payload):
             llm_result = llm_analyze_script(payload, include_parts=False)
         except Exception as exc:
             llm_error = f"{type(exc).__name__}: {exc}"
+
+    # 检查是否有参考图
+    refs = payload.get("refs", [])
+    has_refs = any(ref.get("name") != "未上传" for ref in refs if isinstance(ref, dict))
+
     return {
         "backend": "storyboard-agent",
         "agentSource": str(AGENT_PATH),
         "usedLLM": bool(llm_result),
         "llmError": llm_error,
-        "inferredCharacter": (llm_result or {}).get("character") or infer_character_setting(script),
-        "inferredScene": (llm_result or {}).get("scene") or infer_scene_setting(script),
+        "inferredCharacter": (llm_result or {}).get("character") or infer_character_setting(script, has_refs=has_refs),
+        "inferredScene": (llm_result or {}).get("scene") or infer_scene_setting(script, has_refs=has_refs),
     }
 
 
