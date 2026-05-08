@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>参考图上传测试</title>
+  <style>
+    :root {
+      --bg: #f4f1ea;
+      --panel: #fffdf8;
+      --ink: #171717;
+      --muted: #69645c;
+      --line: #d2cbc0;
+      --accent: #b72025;
+      --warn: #a76312;
+      --radius: 8px;
+      font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: var(--panel);
+      padding: 30px;
+      border-radius: var(--radius);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      margin: 0 0 10px 0;
+      font-size: 28px;
+      color: var(--accent);
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid var(--line);
+    }
+
+    .file-grid {
+      display: grid;
+      gap: 24px;
+    }
+
+    .file-row {
+      border: 2px solid var(--line);
+      border-radius: var(--radius);
+      padding: 20px;
+      background: #fffaf1;
+      display: grid;
+      gap: 12px;
+    }
+
+    .file-row strong {
+      font-size: 16px;
+      color: var(--ink);
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .file-row input[type="file"] {
+      padding: 10px;
+      border: 2px solid var(--line);
+      border-radius: 6px;
+      background: white;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .file-row input[type="file"]:hover {
+      border-color: var(--accent);
+    }
+
+    .file-row input[type="text"] {
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: white;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    /* 多图片网格预览 */
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      padding: 16px;
+      background: #fff;
+      border: 2px solid var(--line);
+      border-radius: 8px;
+      min-height: 120px;
+    }
+
+    .preview-item {
+      position: relative;
+      aspect-ratio: 1;
+      border: 2px dashed var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fafafa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .preview-item:hover {
+      border-color: var(--accent);
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .preview-item.empty {
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+      padding: 12px;
+      line-height: 1.5;
+    }
+
+    .preview-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .preview-item .remove-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(183, 32, 37, 0.95);
+      color: white;
+      border: 2px solid white;
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 24px;
+      text-align: center;
+      padding: 0;
+      opacity: 0;
+      transition: all 0.2s;
+      font-weight: bold;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    .preview-item:hover .remove-btn {
+      opacity: 1;
+    }
+
+    .preview-item .remove-btn:hover {
+      background: #d32f2f;
+      transform: scale(1.15);
+    }
+
+    .warning {
+      grid-column: 1 / -1;
+      background: #fff3cd;
+      border: 2px solid #ffc107;
+      color: #856404;
+      padding: 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .stats {
+      margin-top: 30px;
+      padding: 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 8px;
+      font-size: 16px;
+      color: white;
+      text-align: center;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .info-box {
+      background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+      border: 2px solid #667eea;
+      color: #1a237e;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 30px;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .info-box h3 {
+      margin: 0 0 12px 0;
+      font-size: 18px;
+      color: #667eea;
+    }
+
+    .info-box ul {
+      margin: 10px 0;
+      padding-left: 24px;
+    }
+
+    .info-box li {
+      margin: 8px 0;
+    }
+
+    .info-box strong {
+      color: #4527a0;
+    }
+
+    .test-badge {
+      display: inline-block;
+      background: #4caf50;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎨 参考图上传功能测试 <span class="test-badge">多图片支持</span></h1>
+    <p class="subtitle">✨ 每个参考图类型现在可以上传最多 9 张图片 | 支持 3x3 网格预览 | 独立删除功能</p>
+
+    <div class="file-grid">
+      <!-- 角色参考图 -->
+      <div class="file-row">
+        <strong>📷 角色参考图（最多9张）</strong>
+        <input type="file" accept="image/*" data-role="角色参考图" multiple id="characterFiles">
+        <input type="text" placeholder="💡 用途说明：如图1作为主角参考，保持五官、发型、服装、体态和气质一致" readonly>
+        <div class="preview-grid" data-preview-role="角色参考图">
+          <div class="preview-item empty">
+            <em>点击上方"选择文件"<br>可一次选择多张图片<br>（按住 Ctrl 或 Cmd）</em>
+          </div>
+        </div>
+      </div>
+
+      <!-- 场景参考图 -->
+      <div class="file-row">
+        <strong>🏞️ 场景参考图（最多9张）</strong>
+        <input type="file" accept="image/*" data-role="场景参考图" multiple id="sceneFiles">
+        <input type="text" placeholder="💡 用途说明：如图2作为场景参考，保持建筑、空间、材质、灯光一致" readonly>
+        <div class="preview-grid" data-preview-role="场景参考图">
+          <div class="preview-item empty">
+            <em>支持多角度场景参考<br>全景、细节、氛围</em>
+          </div>
+        </div>
+      </div>
+
+      <!-- 版式参考图 -->
+      <div class="file-row">
+        <strong>📐 版式参考图（最多9张）</strong>
+        <input type="file" accept="image/*" data-role="版式参考图" multiple id="layoutFiles">
+        <input type="text" placeholder="💡 用途说明：如图3只作为排版参考，不改变剧情和场景" readonly>
+        <div class="preview-grid" data-preview-role="版式参考图">
+          <div class="preview-item empty">
+            <em>支持多种版式参考<br>不同布局方案</em>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats" id="stats">
+      📊 统计：角色 0 张 | 场景 0 张 | 版式 0 张 | 总计 0 张
+    </div>
+
+    <div class="info-box">
+      <h3>💡 功能说明与测试指南</h3>
+      <ul>
+        <li><strong>✅ 多选图片：</strong>点击"选择文件"，按住 Ctrl（Windows）或 Cmd（Mac）可以一次选择多张图片</li>
+        <li><strong>✅ 网格预览：</strong>图片会以 3x3 网格显示，最多显示 9 张，布局整齐美观</li>
+        <li><strong>✅ 删除功能：</strong>鼠标悬停在任意图片上，会显示右上角的 × 按钮，点击即可删除该图片</li>
+        <li><strong>✅ 数量限制：</strong>每个类型最多 9 张，如果选择超过 9 张会显示黄色警告提示</li>
+        <li><strong>✅ 实时统计：</strong>底部会实时显示已选择的图片数量统计</li>
+        <li><strong>✅ 支持格式：</strong>JPG、PNG、GIF、WebP、BMP 等所有常见图片格式</li>
+      </ul>
+      <p style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #667eea;">
+        <strong>🧪 测试建议：</strong>
+        尝试上传 1 张、3 张、9 张、10+ 张图片，测试各种场景下的显示效果和删除功能。
+      </p>
+    </div>
+  </div>
+
+  <script>
+    function setupFilePreviews() {
+      document.querySelectorAll("input[type=file]").forEach(input => {
+        // 为每个输入框创建一个文件数组来存储所有选择的文件
+        if (!input.filesList) {
+          input.filesList = [];
+        }
+
+        input.addEventListener("change", () => {
+          const newFiles = Array.from(input.files);
+          const role = input.dataset.role;
+          const previewGrid = input.closest(".file-row").querySelector(".preview-grid");
+
+          if (!newFiles || newFiles.length === 0) {
+            // 如果没有新文件但有已存储的文件，显示已存储的
+            if (input.filesList.length > 0) {
+              renderPreviews(input, previewGrid);
+            } else {
+              previewGrid.innerHTML = '<div class="preview-item empty"><em>未选择图片</em></div>';
+            }
+            updateStats();
+            return;
+          }
+
+          // 将新文件添加到已存储的文件列表
+          newFiles.forEach(file => {
+            // 检查是否已存在同名文件
+            const exists = input.filesList.some(f => f.name === file.name && f.size === file.size);
+            if (!exists && input.filesList.length < 9) {
+              input.filesList.push(file);
+            }
+          });
+
+          // 渲染预览
+          renderPreviews(input, previewGrid);
+          updateStats();
+        });
+      });
+    }
+
+    function renderPreviews(input, previewGrid) {
+      const files = input.filesList;
+      const maxFiles = 9;
+
+      // 清空预览区域
+      previewGrid.innerHTML = '';
+
+      if (files.length === 0) {
+        previewGrid.innerHTML = '<div class="preview-item empty"><em>点击上方"选择文件"<br>可一次选择多张图片<br>或多次添加单张图片</em></div>';
+        return;
+      }
+
+      // 为每个文件创建预览
+      files.forEach((file, index) => {
+        const url = URL.createObjectURL(file);
+        const previewItem = document.createElement('div');
+        previewItem.className = 'preview-item';
+        previewItem.innerHTML = `
+          <img alt="${file.name}" src="${url}" title="${file.name}">
+          <button class="remove-btn" data-index="${index}" title="删除">×</button>
+        `;
+
+        // 删除按钮事件
+        const removeBtn = previewItem.querySelector('.remove-btn');
+        removeBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+
+          // 从文件列表中移除
+          input.filesList.splice(index, 1);
+
+          // 重新渲染
+          renderPreviews(input, previewGrid);
+          updateStats();
+        });
+
+        previewGrid.appendChild(previewItem);
+      });
+
+      // 如果已达到最大数量，显示提示
+      if (files.length >= maxFiles) {
+        const warningItem = document.createElement('div');
+        warningItem.className = 'warning';
+        warningItem.innerHTML = `✅ 已添加 ${files.length} 张图片（已达上限）`;
+        previewGrid.appendChild(warningItem);
+      } else {
+        // 显示还可以添加的数量
+        const infoItem = document.createElement('div');
+        infoItem.className = 'preview-item empty';
+        infoItem.style.gridColumn = '1 / -1';
+        infoItem.style.color = '#666';
+        infoItem.style.fontSize = '12px';
+        infoItem.innerHTML = `<em>✨ 已添加 ${files.length} 张，还可以添加 ${maxFiles - files.length} 张<br>可以继续点击"选择文件"添加更多</em>`;
+        previewGrid.appendChild(infoItem);
+      }
+    }
+
+    function updateStats() {
+      const characterCount = document.getElementById('characterFiles').filesList?.length || 0;
+      const sceneCount = document.getElementById('sceneFiles').filesList?.length || 0;
+      const layoutCount = document.getElementById('layoutFiles').filesList?.length || 0;
+      const total = characterCount + sceneCount + layoutCount;
+
+      document.getElementById('stats').textContent =
+        `📊 统计：角色 ${characterCount} 张 | 场景 ${sceneCount} 张 | 版式 ${layoutCount} 张 | 总计 ${total} 张`;
+    }
+
+    // 初始化
+    setupFilePreviews();
+
+    // 页面加载完成提示
+    window.addEventListener('load', () => {
+      console.log('✅ 多图片上传功能已加载');
+      console.log('📝 支持多次添加图片');
+    });
+  </script>
+</body>
+</html>
