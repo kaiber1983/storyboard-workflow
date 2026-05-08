@@ -2330,7 +2330,7 @@ cinematic realism, smooth camera motion, natural motion, sharp face, sharp hands
       const apiConfig = getImageApiConfig();
       if (!apiConfig || !apiConfig.url || !apiConfig.key) {
         if (confirm("尚未配置生图 API。\n\n点击"确定"打开配置窗口，或点击"取消"复制提示词手动生成。")) {
-          $("imageApiConfig").click();
+          $("imageApiToggle").click();
         } else {
           // 复制提示词
           navigator.clipboard.writeText(prompt).then(() => {
