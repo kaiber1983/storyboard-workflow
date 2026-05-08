@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>生图API配置 - 功能预览</title>
+  <style>
+    :root {
+      --bg: #f4f1ea;
+      --panel: #fffdf8;
+      --ink: #171717;
+      --muted: #69645c;
+      --line: #d2cbc0;
+      --accent: #b72025;
+      --ok: #287454;
+      --field: #fffaf1;
+      --radius: 8px;
+      font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: var(--panel);
+      padding: 30px;
+      border-radius: var(--radius);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      margin: 0 0 10px 0;
+      font-size: 28px;
+      color: var(--accent);
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid var(--line);
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 30px;
+    }
+
+    .btn {
+      border: 1px solid var(--line);
+      background: var(--ink);
+      color: #fff;
+      border-radius: 6px;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .btn:hover {
+      background: #2a2a2a;
+      transform: translateY(-1px);
+    }
+
+    .btn.secondary {
+      background: #fffdf8;
+      color: var(--ink);
+      border-color: var(--line);
+    }
+
+    .btn.secondary:hover {
+      background: #f5f5f5;
+    }
+
+    /* 生图API配置模态窗口 */
+    .image-api-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+    }
+
+    .image-api-modal.show {
+      display: flex;
+    }
+
+    .image-api-content {
+      background: var(--panel);
+      border: 2px solid var(--line);
+      border-radius: var(--radius);
+      padding: 24px;
+      max-width: 600px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .image-api-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--line);
+    }
+
+    .image-api-header h3 {
+      font-size: 18px;
+      color: var(--ink);
+      margin: 0;
+    }
+
+    .image-api-close {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--muted);
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      transition: all 0.2s;
+    }
+
+    .image-api-close:hover {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    .image-api-form {
+      display: grid;
+      gap: 16px;
+    }
+
+    .image-api-field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .image-api-field label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .image-api-field input,
+    .image-api-field select {
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--field);
+      font-size: 14px;
+      width: 100%;
+    }
+
+    .image-api-field input:focus,
+    .image-api-field select:focus {
+      border-color: var(--accent);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(183, 32, 37, 0.1);
+    }
+
+    .image-api-hint {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .image-api-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+    }
+
+    .image-api-status {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      display: none;
+    }
+
+    .image-api-status.show {
+      display: block;
+    }
+
+    .image-api-status.success {
+      background: rgba(40, 116, 84, 0.1);
+      border: 1px solid var(--ok);
+      color: var(--ok);
+    }
+
+    .image-api-status.error {
+      background: rgba(183, 32, 37, 0.1);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .info-box {
+      background: #e3f2fd;
+      border: 1px solid #2196f3;
+      color: #0d47a1;
+      padding: 16px;
+      border-radius: 6px;
+      margin-top: 20px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .info-box h3 {
+      margin: 0 0 10px 0;
+      font-size: 15px;
+    }
+
+    .config-display {
+      background: #f5f5f5;
+      border: 1px solid var(--line);
+      padding: 16px;
+      border-radius: 6px;
+      margin-top: 20px;
+      font-family: monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎨 生图 API 配置功能预览</h1>
+    <p class="subtitle">测试生图 API 配置模块的完整功能</p>
+
+    <div class="toolbar">
+      <button class="btn" id="openConfigBtn">🎨 打开生图API配置</button>
+      <button class="btn secondary" id="showConfigBtn">📋 查看当前配置</button>
+      <button class="btn secondary" id="clearConfigBtn">🗑️ 清除配置</button>
+    </div>
+
+    <div class="config-display" id="configDisplay">
+当前配置：未配置
+
+点击"打开生图API配置"按钮开始配置
+    </div>
+
+    <div class="info-box">
+      <h3>💡 测试说明</h3>
+      <p><strong>1. 打开配置窗口：</strong>点击"打开生图API配置"按钮</p>
+      <p><strong>2. 填写配置信息：</strong></p>
+      <ul style="margin: 8px 0; padding-left: 20px;">
+        <li>API 地址：例如 https://api.openai.com/v1</li>
+        <li>API Key：你的密钥（sk-...）</li>
+        <li>选择模型和参数</li>
+      </ul>
+      <p><strong>3. 测试连接：</strong>点击"测试连接"验证配置</p>
+      <p><strong>4. 保存配置：</strong>点击"保存配置"</p>
+      <p><strong>5. 查看配置：</strong>点击"查看当前配置"查看已保存的信息</p>
+      <p style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #2196f3;">
+        <strong>注意：</strong>配置保存在浏览器本地存储中，刷新页面后仍然保留。
+      </p>
+    </div>
+  </div>
+
+  <!-- 生图API配置模态窗口 -->
+  <div class="image-api-modal" id="imageApiModal">
+    <div class="image-api-content">
+      <div class="image-api-header">
+        <h3>🎨 生图 API 配置</h3>
+        <button class="image-api-close" id="imageApiClose" type="button">×</button>
+      </div>
+
+      <div class="image-api-form">
+        <div class="image-api-field">
+          <label for="imageApiUrl">API 地址（Base URL）</label>
+          <input type="text" id="imageApiUrl" placeholder="例如：https://api.openai.com/v1">
+          <span class="image-api-hint">支持 OpenAI、GPT Image-2、Gemini Imagen 3 等兼容接口</span>
+        </div>
+
+        <div class="image-api-field">
+          <label for="imageApiKey">API Key</label>
+          <input type="password" id="imageApiKey" placeholder="sk-...">
+          <span class="image-api-hint">你的 API 密钥，将安全存储在本地浏览器中</span>
+        </div>
+
+        <div class="image-api-field">
+          <label for="imageApiModel">模型名称</label>
+          <select id="imageApiModel">
+            <option value="gpt-image-2">GPT Image-2（推荐）</option>
+            <option value="dall-e-3">DALL-E 3</option>
+            <option value="imagen-3">Gemini Imagen 3</option>
+            <option value="custom">自定义模型</option>
+          </select>
+          <span class="image-api-hint">选择要使用的图像生成模型</span>
+        </div>
+
+        <div class="image-api-field" id="customModelField" style="display: none;">
+          <label for="imageApiCustomModel">自定义模型名称</label>
+          <input type="text" id="imageApiCustomModel" placeholder="例如：grok-aurora">
+        </div>
+
+        <div class="image-api-field">
+          <label for="imageApiSize">默认尺寸</label>
+          <select id="imageApiSize">
+            <option value="1024x1792">1024 x 1792（9:16 竖屏）</option>
+            <option value="1792x1024">1792 x 1024（16:9 横屏）</option>
+            <option value="1024x1024">1024 x 1024（1:1 方图）</option>
+            <option value="2048x2048">2048 x 2048（2K 方图）</option>
+            <option value="1536x2048">1536 x 2048（3:4）</option>
+            <option value="2048x1536">2048 x 1536（4:3）</option>
+            <option value="3840x2160">3840 x 2160（4K 横屏）</option>
+            <option value="2160x3840">2160 x 3840（4K 竖屏）</option>
+          </select>
+          <span class="image-api-hint">生成分镜图片时使用的默认尺寸</span>
+        </div>
+
+        <div class="image-api-field">
+          <label for="imageApiQuality">图片质量</label>
+          <select id="imageApiQuality">
+            <option value="high">高质量（推荐）</option>
+            <option value="medium">中等质量</option>
+            <option value="low">快速生成</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="image-api-status" id="imageApiStatus"></div>
+
+      <div class="image-api-actions">
+        <button class="btn" id="imageApiTest" type="button">测试连接</button>
+        <button class="btn" id="imageApiSave" type="button" style="background: var(--ok); color: white; border: none;">保存配置</button>
+        <button class="btn secondary" id="imageApiCancel" type="button">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const IMAGE_API_STORAGE_KEY = "imageApiConfig";
+
+    // 初始化
+    function init() {
+      setupImageApiConfig();
+      updateConfigDisplay();
+    }
+
+    function setupImageApiConfig() {
+      const modal = $("imageApiModal");
+      const closeBtn = $("imageApiClose");
+      const cancelBtn = $("imageApiCancel");
+      const saveBtn = $("imageApiSave");
+      const testBtn = $("imageApiTest");
+      const openBtn = $("openConfigBtn");
+      const showBtn = $("showConfigBtn");
+      const clearBtn = $("clearConfigBtn");
+      const modelSelect = $("imageApiModel");
+      const customModelField = $("customModelField");
+      const statusDiv = $("imageApiStatus");
+
+      console.log("✅ setupImageApiConfig 已执行");
+
+      // 打开模态窗口
+      openBtn.addEventListener("click", () => {
+        console.log("🎨 打开配置窗口");
+        loadImageApiConfig();
+        modal.classList.add("show");
+      });
+
+      // 关闭模态窗口
+      const closeModal = () => {
+        modal.classList.remove("show");
+        statusDiv.classList.remove("show");
+      };
+
+      closeBtn.addEventListener("click", closeModal);
+      cancelBtn.addEventListener("click", closeModal);
+
+      // 点击背景关闭
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) closeModal();
+      });
+
+      // 模型选择变化
+      modelSelect.addEventListener("change", () => {
+        customModelField.style.display = modelSelect.value === "custom" ? "block" : "none";
+      });
+
+      // 保存配置
+      saveBtn.addEventListener("click", () => {
+        const config = {
+          url: $("imageApiUrl").value.trim(),
+          key: $("imageApiKey").value.trim(),
+          model: $("imageApiModel").value,
+          customModel: $("imageApiCustomModel").value.trim(),
+          size: $("imageApiSize").value,
+          quality: $("imageApiQuality").value
+        };
+
+        if (!config.url) {
+          showImageApiStatus("请输入 API 地址", "error");
+          return;
+        }
+
+        if (!config.key) {
+          showImageApiStatus("请输入 API Key", "error");
+          return;
+        }
+
+        localStorage.setItem(IMAGE_API_STORAGE_KEY, JSON.stringify(config));
+        showImageApiStatus("✅ 配置已保存", "success");
+        updateConfigDisplay();
+
+        setTimeout(() => {
+          closeModal();
+        }, 1500);
+      });
+
+      // 测试连接
+      testBtn.addEventListener("click", async () => {
+        const url = $("imageApiUrl").value.trim();
+        const key = $("imageApiKey").value.trim();
+
+        if (!url || !key) {
+          showImageApiStatus("请先填写 API 地址和 Key", "error");
+          return;
+        }
+
+        testBtn.disabled = true;
+        testBtn.textContent = "测试中...";
+        showImageApiStatus("正在测试连接...", "success");
+
+        try {
+          const response = await fetch(`${url}/models`, {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${key}`,
+              "Content-Type": "application/json"
+            }
+          });
+
+          if (response.ok) {
+            showImageApiStatus("✅ 连接成功！API 可用", "success");
+          } else {
+            showImageApiStatus(`⚠️ 连接失败：${response.status} ${response.statusText}`, "error");
+          }
+        } catch (error) {
+          showImageApiStatus(`❌ 连接错误：${error.message}`, "error");
+        } finally {
+          testBtn.disabled = false;
+          testBtn.textContent = "测试连接";
+        }
+      });
+
+      // 查看配置
+      showBtn.addEventListener("click", () => {
+        updateConfigDisplay();
+        alert("配置信息已更新到下方显示区域");
+      });
+
+      // 清除配置
+      clearBtn.addEventListener("click", () => {
+        if (confirm("确定要清除所有配置吗？")) {
+          localStorage.removeItem(IMAGE_API_STORAGE_KEY);
+          updateConfigDisplay();
+          alert("✅ 配置已清除");
+        }
+      });
+    }
+
+    function loadImageApiConfig() {
+      const saved = localStorage.getItem(IMAGE_API_STORAGE_KEY);
+      if (saved) {
+        try {
+          const config = JSON.parse(saved);
+          $("imageApiUrl").value = config.url || "";
+          $("imageApiKey").value = config.key || "";
+          $("imageApiModel").value = config.model || "gpt-image-2";
+          $("imageApiCustomModel").value = config.customModel || "";
+          $("imageApiSize").value = config.size || "1024x1792";
+          $("imageApiQuality").value = config.quality || "high";
+
+          if (config.model === "custom") {
+            $("customModelField").style.display = "block";
+          }
+        } catch (e) {
+          console.error("加载配置失败:", e);
+        }
+      }
+    }
+
+    function showImageApiStatus(message, type) {
+      const statusDiv = $("imageApiStatus");
+      statusDiv.textContent = message;
+      statusDiv.className = `image-api-status show ${type}`;
+    }
+
+    function updateConfigDisplay() {
+      const saved = localStorage.getItem(IMAGE_API_STORAGE_KEY);
+      const display = $("configDisplay");
+
+      if (saved) {
+        try {
+          const config = JSON.parse(saved);
+          const modelName = config.model === "custom" ? config.customModel : config.model;
+          display.textContent = `当前配置：
+
+API 地址：${config.url}
+API Key：${config.key.substring(0, 10)}...（已隐藏）
+模型：${modelName}
+尺寸：${config.size}
+质量：${config.quality}
+
+配置已保存在本地浏览器中`;
+        } catch (e) {
+          display.textContent = "配置解析失败";
+        }
+      } else {
+        display.textContent = `当前配置：未配置
+
+点击"打开生图API配置"按钮开始配置`;
+      }
+    }
+
+    // 页面加载完成后初始化
+    window.addEventListener('load', () => {
+      console.log("🚀 页面加载完成");
+      init();
+    });
+  </script>
+</body>
+</html>

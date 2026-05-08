@@ -724,6 +724,7 @@
           <small id="backendStatus">后端：Storyboard Agent 未连接</small>
         </div>
         <div class="toolbar-actions">
+          <button class="btn secondary" id="storyboardApiConfig" type="button">⚙️ 分镜API配置</button>
           <button class="btn secondary" id="imageApiConfig" type="button">🎨 生图API配置</button>
           <button class="btn secondary" id="loadDemo" type="button">填入示例</button>
           <button class="btn warn" id="generate" type="button">生成分镜与提示词</button>
@@ -731,7 +732,8 @@
         </div>
       </div>
 
-      <section class="api-panel">
+      <section class="api-panel" style="display: none;">
+        <!-- 原有的 API 配置面板，保留但隐藏 -->
         <div class="section-head">
           <h3>API 调用窗口</h3>
           <small>OpenAI 兼容接口，启用后优先调用大模型生成内容</small>
@@ -947,6 +949,130 @@
         </div>
       </section>
     </main>
+  </div>
+
+  <!-- 生图API配置模态窗口 -->
+  <div class="image-api-modal" id="imageApiModal">
+    <div class="image-api-content">
+      <div class="image-api-header">
+        <h3>🎨 生图 API 配置</h3>
+        <button class="image-api-close" id="imageApiClose" type="button">×</button>
+      </div>
+
+      <div class="image-api-form">
+        <div class="image-api-field">
+          <label for="imageApiUrl">API 地址（Base URL）</label>
+          <input type="text" id="imageApiUrl" placeholder="例如：https://api.openai.com/v1">
+          <span class="image-api-hint">支持 OpenAI、GPT Image-2、Gemini Imagen 3 等兼容接口</span>
+        </div>
+
+        <div class="image-api-field">
+          <label for="imageApiKey">API Key</label>
+          <input type="password" id="imageApiKey" placeholder="sk-...">
+          <span class="image-api-hint">你的 API 密钥，将安全存储在本地浏览器中</span>
+        </div>
+
+        <div class="image-api-field">
+          <label for="imageApiModel">模型名称</label>
+          <select id="imageApiModel">
+            <option value="gpt-image-2">GPT Image-2（推荐）</option>
+            <option value="dall-e-3">DALL-E 3</option>
+            <option value="imagen-3">Gemini Imagen 3</option>
+            <option value="custom">自定义模型</option>
+          </select>
+          <span class="image-api-hint">选择要使用的图像生成模型</span>
+        </div>
+
+        <div class="image-api-field" id="customModelField" style="display: none;">
+          <label for="imageApiCustomModel">自定义模型名称</label>
+          <input type="text" id="imageApiCustomModel" placeholder="例如：grok-aurora">
+        </div>
+
+        <div class="image-api-field">
+          <label for="imageApiSize">默认尺寸</label>
+          <select id="imageApiSize">
+            <option value="1024x1792">1024 x 1792（9:16 竖屏）</option>
+            <option value="1792x1024">1792 x 1024（16:9 横屏）</option>
+            <option value="1024x1024">1024 x 1024（1:1 方图）</option>
+            <option value="2048x2048">2048 x 2048（2K 方图）</option>
+            <option value="1536x2048">1536 x 2048（3:4）</option>
+            <option value="2048x1536">2048 x 1536（4:3）</option>
+            <option value="3840x2160">3840 x 2160（4K 横屏）</option>
+            <option value="2160x3840">2160 x 3840（4K 竖屏）</option>
+          </select>
+          <span class="image-api-hint">生成分镜图片时使用的默认尺寸</span>
+        </div>
+
+        <div class="image-api-field">
+          <label for="imageApiQuality">图片质量</label>
+          <select id="imageApiQuality">
+            <option value="high">高质量（推荐）</option>
+            <option value="medium">中等质量</option>
+            <option value="low">快速生成</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="image-api-status" id="imageApiStatus"></div>
+
+      <div class="image-api-actions">
+        <button class="btn" id="imageApiTest" type="button">测试连接</button>
+        <button class="btn" id="imageApiSave" type="button" style="background: var(--ok); color: white; border: none;">保存配置</button>
+        <button class="btn secondary" id="imageApiCancel" type="button">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 分镜API配置模态窗口 -->
+  <div class="image-api-modal" id="storyboardApiModal">
+    <div class="image-api-content">
+      <div class="image-api-header">
+        <h3>⚙️ 分镜 API 配置</h3>
+        <button class="image-api-close" id="storyboardApiClose" type="button">×</button>
+      </div>
+
+      <div class="image-api-form">
+        <div class="image-api-field">
+          <label>
+            <input type="checkbox" id="storyboardApiEnabled" style="width: auto; margin-right: 8px;">
+            启用大模型生成分镜
+          </label>
+          <span class="image-api-hint">启用后将使用 AI 模型生成分镜内容，未启用时使用本地规则</span>
+        </div>
+
+        <div class="image-api-field">
+          <label for="storyboardBackendUrl">后端 API 地址</label>
+          <input type="text" id="storyboardBackendUrl" placeholder="留空则自动使用当前网站后端">
+          <span class="image-api-hint">分镜生成服务的后端地址</span>
+        </div>
+
+        <div class="image-api-field">
+          <label for="storyboardApiUrl">API Base URL</label>
+          <input type="text" id="storyboardApiUrl" placeholder="https://api.openai.com/v1">
+          <span class="image-api-hint">OpenAI 兼容的 API 端点</span>
+        </div>
+
+        <div class="image-api-field">
+          <label for="storyboardApiModel">模型</label>
+          <input type="text" id="storyboardApiModel" placeholder="gpt-4o-mini">
+          <span class="image-api-hint">用于生成分镜的模型名称</span>
+        </div>
+
+        <div class="image-api-field">
+          <label for="storyboardApiKey">API Key</label>
+          <input type="password" id="storyboardApiKey" placeholder="sk-...">
+          <span class="image-api-hint">你的 API 密钥，将安全存储在本地浏览器中</span>
+        </div>
+      </div>
+
+      <div class="image-api-status" id="storyboardApiStatus"></div>
+
+      <div class="image-api-actions">
+        <button class="btn" id="storyboardApiTest" type="button">测试连接</button>
+        <button class="btn" id="storyboardApiSave" type="button" style="background: var(--ok); color: white; border: none;">保存配置</button>
+        <button class="btn secondary" id="storyboardApiCancel" type="button">取消</button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -1555,8 +1681,23 @@ cinematic realism, smooth camera motion, natural motion, sharp face, sharp hands
       const customModelField = $("customModelField");
       const statusDiv = $("imageApiStatus");
 
+      console.log("setupImageApiConfig 已执行");
+      console.log("configBtn:", configBtn);
+      console.log("modal:", modal);
+
+      if (!configBtn) {
+        console.error("找不到 imageApiConfig 按钮！");
+        return;
+      }
+
+      if (!modal) {
+        console.error("找不到 imageApiModal 模态窗口！");
+        return;
+      }
+
       // 打开模态窗口
       configBtn.addEventListener("click", () => {
+        console.log("配置按钮被点击");
         loadImageApiConfig();
         modal.classList.add("show");
       });
@@ -1687,6 +1828,138 @@ cinematic realism, smooth camera motion, natural motion, sharp face, sharp hands
       return null;
     }
 
+    // 分镜API配置
+    function setupStoryboardApiConfig() {
+      const modal = $("storyboardApiModal");
+      const closeBtn = $("storyboardApiClose");
+      const cancelBtn = $("storyboardApiCancel");
+      const saveBtn = $("storyboardApiSave");
+      const testBtn = $("storyboardApiTest");
+      const configBtn = $("storyboardApiConfig");
+      const statusDiv = $("storyboardApiStatus");
+
+      console.log("setupStoryboardApiConfig 已执行");
+
+      if (!configBtn) {
+        console.error("找不到 storyboardApiConfig 按钮！");
+        return;
+      }
+
+      // 打开模态窗口
+      configBtn.addEventListener("click", () => {
+        console.log("分镜API配置按钮被点击");
+        loadStoryboardApiConfig();
+        modal.classList.add("show");
+      });
+
+      // 关闭模态窗口
+      const closeModal = () => {
+        modal.classList.remove("show");
+        statusDiv.classList.remove("show");
+      };
+
+      closeBtn.addEventListener("click", closeModal);
+      cancelBtn.addEventListener("click", closeModal);
+
+      // 点击背景关闭
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) closeModal();
+      });
+
+      // 保存配置
+      saveBtn.addEventListener("click", () => {
+        const config = {
+          enabled: $("storyboardApiEnabled").checked,
+          backendUrl: $("storyboardBackendUrl").value.trim(),
+          apiUrl: $("storyboardApiUrl").value.trim(),
+          model: $("storyboardApiModel").value.trim(),
+          key: $("storyboardApiKey").value.trim()
+        };
+
+        if (config.enabled && !config.apiUrl) {
+          showStoryboardApiStatus("请输入 API Base URL", "error");
+          return;
+        }
+
+        if (config.enabled && !config.key) {
+          showStoryboardApiStatus("请输入 API Key", "error");
+          return;
+        }
+
+        // 同步到原有的表单字段
+        $("apiEnabled").checked = config.enabled;
+        $("backendBaseUrl").value = config.backendUrl;
+        $("apiBaseUrl").value = config.apiUrl;
+        $("apiModel").value = config.model;
+        $("apiKey").value = config.key;
+
+        localStorage.setItem(API_STORAGE_KEY, JSON.stringify(config));
+        showStoryboardApiStatus("✅ 配置已保存", "success");
+
+        setTimeout(() => {
+          closeModal();
+        }, 1500);
+      });
+
+      // 测试连接
+      testBtn.addEventListener("click", async () => {
+        const url = $("storyboardApiUrl").value.trim();
+        const key = $("storyboardApiKey").value.trim();
+
+        if (!url || !key) {
+          showStoryboardApiStatus("请先填写 API 地址和 Key", "error");
+          return;
+        }
+
+        testBtn.disabled = true;
+        testBtn.textContent = "测试中...";
+        showStoryboardApiStatus("正在测试连接...", "success");
+
+        try {
+          const response = await fetch(`${url}/models`, {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${key}`,
+              "Content-Type": "application/json"
+            }
+          });
+
+          if (response.ok) {
+            showStoryboardApiStatus("✅ 连接成功！API 可用", "success");
+          } else {
+            showStoryboardApiStatus(`⚠️ 连接失败：${response.status} ${response.statusText}`, "error");
+          }
+        } catch (error) {
+          showStoryboardApiStatus(`❌ 连接错误：${error.message}`, "error");
+        } finally {
+          testBtn.disabled = false;
+          testBtn.textContent = "测试连接";
+        }
+      });
+    }
+
+    function loadStoryboardApiConfig() {
+      const saved = localStorage.getItem(API_STORAGE_KEY);
+      if (saved) {
+        try {
+          const config = JSON.parse(saved);
+          $("storyboardApiEnabled").checked = config.enabled || false;
+          $("storyboardBackendUrl").value = config.backendUrl || "";
+          $("storyboardApiUrl").value = config.apiUrl || "";
+          $("storyboardApiModel").value = config.model || "gpt-4o-mini";
+          $("storyboardApiKey").value = config.key || "";
+        } catch (e) {
+          console.error("加载配置失败:", e);
+        }
+      }
+    }
+
+    function showStoryboardApiStatus(message, type) {
+      const statusDiv = $("storyboardApiStatus");
+      statusDiv.textContent = message;
+      statusDiv.className = `image-api-status show ${type}`;
+    }
+
     $("generate").addEventListener("click", generateAll);
     $("extractInfo").addEventListener("click", extractInfo);
     $("saveApi").addEventListener("click", saveApiConfig);
@@ -1784,79 +2057,8 @@ cinematic realism, smooth camera motion, natural motion, sharp face, sharp hands
     setupFilePreviews();
     setupCopy();
     setupImageApiConfig();
+    setupStoryboardApiConfig();
   </script>
-
-  <!-- 生图API配置模态窗口 -->
-  <div class="image-api-modal" id="imageApiModal">
-    <div class="image-api-content">
-      <div class="image-api-header">
-        <h3>🎨 生图 API 配置</h3>
-        <button class="image-api-close" id="imageApiClose" type="button">×</button>
-      </div>
-
-      <div class="image-api-form">
-        <div class="image-api-field">
-          <label for="imageApiUrl">API 地址（Base URL）</label>
-          <input type="text" id="imageApiUrl" placeholder="例如：https://api.openai.com/v1">
-          <span class="image-api-hint">支持 OpenAI、GPT Image-2、Gemini Imagen 3 等兼容接口</span>
-        </div>
-
-        <div class="image-api-field">
-          <label for="imageApiKey">API Key</label>
-          <input type="password" id="imageApiKey" placeholder="sk-...">
-          <span class="image-api-hint">你的 API 密钥，将安全存储在本地浏览器中</span>
-        </div>
-
-        <div class="image-api-field">
-          <label for="imageApiModel">模型名称</label>
-          <select id="imageApiModel">
-            <option value="gpt-image-2">GPT Image-2（推荐）</option>
-            <option value="dall-e-3">DALL-E 3</option>
-            <option value="imagen-3">Gemini Imagen 3</option>
-            <option value="custom">自定义模型</option>
-          </select>
-          <span class="image-api-hint">选择要使用的图像生成模型</span>
-        </div>
-
-        <div class="image-api-field" id="customModelField" style="display: none;">
-          <label for="imageApiCustomModel">自定义模型名称</label>
-          <input type="text" id="imageApiCustomModel" placeholder="例如：grok-aurora">
-        </div>
-
-        <div class="image-api-field">
-          <label for="imageApiSize">默认尺寸</label>
-          <select id="imageApiSize">
-            <option value="1024x1792">1024 x 1792（9:16 竖屏）</option>
-            <option value="1792x1024">1792 x 1024（16:9 横屏）</option>
-            <option value="1024x1024">1024 x 1024（1:1 方图）</option>
-            <option value="2048x2048">2048 x 2048（2K 方图）</option>
-            <option value="1536x2048">1536 x 2048（3:4）</option>
-            <option value="2048x1536">2048 x 1536（4:3）</option>
-            <option value="3840x2160">3840 x 2160（4K 横屏）</option>
-            <option value="2160x3840">2160 x 3840（4K 竖屏）</option>
-          </select>
-          <span class="image-api-hint">生成分镜图片时使用的默认尺寸</span>
-        </div>
-
-        <div class="image-api-field">
-          <label for="imageApiQuality">图片质量</label>
-          <select id="imageApiQuality">
-            <option value="high">高质量（推荐）</option>
-            <option value="medium">中等质量</option>
-            <option value="low">快速生成</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="image-api-status" id="imageApiStatus"></div>
-
-      <div class="image-api-actions">
-        <button class="btn" id="imageApiTest" type="button">测试连接</button>
-        <button class="btn" id="imageApiSave" type="button" style="background: var(--ok); color: white; border: none;">保存配置</button>
-        <button class="btn secondary" id="imageApiCancel" type="button">取消</button>
-      </div>
-    </div>
-  </div>
 
 </body>
 </html>

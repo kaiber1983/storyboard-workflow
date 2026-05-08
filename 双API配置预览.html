@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>双API配置 - 功能预览</title>
+  <style>
+    :root {
+      --bg: #f4f1ea;
+      --panel: #fffdf8;
+      --ink: #171717;
+      --muted: #69645c;
+      --line: #d2cbc0;
+      --accent: #b72025;
+      --ok: #287454;
+      --field: #fffaf1;
+      --radius: 8px;
+      font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: var(--panel);
+      padding: 30px;
+      border-radius: var(--radius);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      margin: 0 0 10px 0;
+      font-size: 28px;
+      color: var(--accent);
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid var(--line);
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: 1px solid var(--line);
+      background: var(--ink);
+      color: #fff;
+      border-radius: 6px;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .btn:hover {
+      background: #2a2a2a;
+      transform: translateY(-1px);
+    }
+
+    .btn.secondary {
+      background: #fffdf8;
+      color: var(--ink);
+      border-color: var(--line);
+    }
+
+    .btn.secondary:hover {
+      background: #f5f5f5;
+    }
+
+    /* 模态窗口 */
+    .image-api-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+    }
+
+    .image-api-modal.show {
+      display: flex;
+    }
+
+    .image-api-content {
+      background: var(--panel);
+      border: 2px solid var(--line);
+      border-radius: var(--radius);
+      padding: 24px;
+      max-width: 600px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .image-api-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--line);
+    }
+
+    .image-api-header h3 {
+      font-size: 18px;
+      color: var(--ink);
+      margin: 0;
+    }
+
+    .image-api-close {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--muted);
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      transition: all 0.2s;
+    }
+
+    .image-api-close:hover {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    .image-api-form {
+      display: grid;
+      gap: 16px;
+    }
+
+    .image-api-field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .image-api-field label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .image-api-field input,
+    .image-api-field select {
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--field);
+      font-size: 14px;
+      width: 100%;
+    }
+
+    .image-api-field input:focus,
+    .image-api-field select:focus {
+      border-color: var(--accent);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(183, 32, 37, 0.1);
+    }
+
+    .image-api-hint {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .image-api-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+    }
+
+    .image-api-status {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      display: none;
+    }
+
+    .image-api-status.show {
+      display: block;
+    }
+
+    .image-api-status.success {
+      background: rgba(40, 116, 84, 0.1);
+      border: 1px solid var(--ok);
+      color: var(--ok);
+    }
+
+    .image-api-status.error {
+      background: rgba(183, 32, 37, 0.1);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .info-box {
+      background: #e3f2fd;
+      border: 1px solid #2196f3;
+      color: #0d47a1;
+      padding: 16px;
+      border-radius: 6px;
+      margin-top: 20px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .config-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .config-card {
+      background: #f5f5f5;
+      border: 1px solid var(--line);
+      padding: 16px;
+      border-radius: 6px;
+    }
+
+    .config-card h3 {
+      margin: 0 0 12px 0;
+      font-size: 16px;
+      color: var(--accent);
+    }
+
+    .config-card pre {
+      font-family: monospace;
+      font-size: 11px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>⚙️ 双API配置功能预览</h1>
+    <p class="subtitle">测试分镜API配置和生图API配置两个并列按钮</p>
+
+    <div class="toolbar">
+      <button class="btn secondary" id="storyboardApiConfig">⚙️ 分镜API配置</button>
+      <button class="btn secondary" id="imageApiConfig">🎨 生图API配置</button>
+      <button class="btn" id="showConfigs">📋 查看所有配置</button>
+      <button class="btn secondary" id="clearAll">🗑️ 清除所有配置</button>
+    </div>
+
+    <div class="config-grid" id="configDisplay">
+      <div class="config-card">
+        <h3>⚙️ 分镜API配置</h3>
+        <pre id="storyboardConfigText">未配置</pre>
+      </div>
+      <div class="config-card">
+        <h3>🎨 生图API配置</h3>
+        <pre id="imageConfigText">未配置</pre>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <h3>💡 测试说明</h3>
+      <p><strong>1. 分镜API配置：</strong>用于配置生成分镜内容的 AI 模型</p>
+      <p><strong>2. 生图API配置：</strong>用于配置生成分镜图片的 AI 模型</p>
+      <p><strong>3. 两个配置独立：</strong>可以分别配置不同的 API 和模型</p>
+      <p><strong>4. 本地存储：</strong>配置保存在浏览器本地，刷新后仍然保留</p>
+    </div>
+  </div>
+
+  <!-- 分镜API配置模态窗口 -->
+  <div class="image-api-modal" id="storyboardApiModal">
+    <div class="image-api-content">
+      <div class="image-api-header">
+        <h3>⚙️ 分镜 API 配置</h3>
+        <button class="image-api-close" id="storyboardApiClose">×</button>
+      </div>
+      <div class="image-api-form">
+        <div class="image-api-field">
+          <label>
+            <input type="checkbox" id="storyboardApiEnabled" style="width: auto; margin-right: 8px;">
+            启用大模型生成分镜
+          </label>
+          <span class="image-api-hint">启用后将使用 AI 模型生成分镜内容</span>
+        </div>
+        <div class="image-api-field">
+          <label for="storyboardBackendUrl">后端 API 地址</label>
+          <input type="text" id="storyboardBackendUrl" placeholder="留空则自动使用当前网站后端">
+        </div>
+        <div class="image-api-field">
+          <label for="storyboardApiUrl">API Base URL</label>
+          <input type="text" id="storyboardApiUrl" placeholder="https://api.openai.com/v1">
+        </div>
+        <div class="image-api-field">
+          <label for="storyboardApiModel">模型</label>
+          <input type="text" id="storyboardApiModel" placeholder="gpt-4o-mini">
+        </div>
+        <div class="image-api-field">
+          <label for="storyboardApiKey">API Key</label>
+          <input type="password" id="storyboardApiKey" placeholder="sk-...">
+        </div>
+      </div>
+      <div class="image-api-status" id="storyboardApiStatus"></div>
+      <div class="image-api-actions">
+        <button class="btn" id="storyboardApiSave" style="background: var(--ok); color: white; border: none;">保存配置</button>
+        <button class="btn secondary" id="storyboardApiCancel">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 生图API配置模态窗口 -->
+  <div class="image-api-modal" id="imageApiModal">
+    <div class="image-api-content">
+      <div class="image-api-header">
+        <h3>🎨 生图 API 配置</h3>
+        <button class="image-api-close" id="imageApiClose">×</button>
+      </div>
+      <div class="image-api-form">
+        <div class="image-api-field">
+          <label for="imageApiUrl">API 地址（Base URL）</label>
+          <input type="text" id="imageApiUrl" placeholder="https://api.openai.com/v1">
+        </div>
+        <div class="image-api-field">
+          <label for="imageApiKey">API Key</label>
+          <input type="password" id="imageApiKey" placeholder="sk-...">
+        </div>
+        <div class="image-api-field">
+          <label for="imageApiModel">模型名称</label>
+          <select id="imageApiModel">
+            <option value="gpt-image-2">GPT Image-2</option>
+            <option value="dall-e-3">DALL-E 3</option>
+          </select>
+        </div>
+        <div class="image-api-field">
+          <label for="imageApiSize">默认尺寸</label>
+          <select id="imageApiSize">
+            <option value="1024x1792">1024 x 1792（9:16）</option>
+            <option value="1792x1024">1792 x 1024（16:9）</option>
+          </select>
+        </div>
+      </div>
+      <div class="image-api-status" id="imageApiStatus"></div>
+      <div class="image-api-actions">
+        <button class="btn" id="imageApiSave" style="background: var(--ok); color: white; border: none;">保存配置</button>
+        <button class="btn secondary" id="imageApiCancel">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const STORYBOARD_KEY = "storyboardApiConfig";
+    const IMAGE_KEY = "imageApiConfig";
+
+    function init() {
+      setupStoryboardApi();
+      setupImageApi();
+      updateDisplay();
+    }
+
+    function setupStoryboardApi() {
+      const modal = $("storyboardApiModal");
+      $("storyboardApiConfig").onclick = () => {
+        loadStoryboardConfig();
+        modal.classList.add("show");
+      };
+      $("storyboardApiClose").onclick = () => modal.classList.remove("show");
+      $("storyboardApiCancel").onclick = () => modal.classList.remove("show");
+      $("storyboardApiSave").onclick = () => {
+        const config = {
+          enabled: $("storyboardApiEnabled").checked,
+          backendUrl: $("storyboardBackendUrl").value,
+          apiUrl: $("storyboardApiUrl").value,
+          model: $("storyboardApiModel").value,
+          key: $("storyboardApiKey").value
+        };
+        localStorage.setItem(STORYBOARD_KEY, JSON.stringify(config));
+        showStatus("storyboardApiStatus", "✅ 配置已保存", "success");
+        updateDisplay();
+        setTimeout(() => modal.classList.remove("show"), 1500);
+      };
+    }
+
+    function setupImageApi() {
+      const modal = $("imageApiModal");
+      $("imageApiConfig").onclick = () => {
+        loadImageConfig();
+        modal.classList.add("show");
+      };
+      $("imageApiClose").onclick = () => modal.classList.remove("show");
+      $("imageApiCancel").onclick = () => modal.classList.remove("show");
+      $("imageApiSave").onclick = () => {
+        const config = {
+          url: $("imageApiUrl").value,
+          key: $("imageApiKey").value,
+          model: $("imageApiModel").value,
+          size: $("imageApiSize").value
+        };
+        localStorage.setItem(IMAGE_KEY, JSON.stringify(config));
+        showStatus("imageApiStatus", "✅ 配置已保存", "success");
+        updateDisplay();
+        setTimeout(() => modal.classList.remove("show"), 1500);
+      };
+    }
+
+    function loadStoryboardConfig() {
+      const saved = localStorage.getItem(STORYBOARD_KEY);
+      if (saved) {
+        const config = JSON.parse(saved);
+        $("storyboardApiEnabled").checked = config.enabled || false;
+        $("storyboardBackendUrl").value = config.backendUrl || "";
+        $("storyboardApiUrl").value = config.apiUrl || "";
+        $("storyboardApiModel").value = config.model || "";
+        $("storyboardApiKey").value = config.key || "";
+      }
+    }
+
+    function loadImageConfig() {
+      const saved = localStorage.getItem(IMAGE_KEY);
+      if (saved) {
+        const config = JSON.parse(saved);
+        $("imageApiUrl").value = config.url || "";
+        $("imageApiKey").value = config.key || "";
+        $("imageApiModel").value = config.model || "gpt-image-2";
+        $("imageApiSize").value = config.size || "1024x1792";
+      }
+    }
+
+    function showStatus(id, msg, type) {
+      const el = $(id);
+      el.textContent = msg;
+      el.className = `image-api-status show ${type}`;
+    }
+
+    function updateDisplay() {
+      const sb = localStorage.getItem(STORYBOARD_KEY);
+      const img = localStorage.getItem(IMAGE_KEY);
+
+      if (sb) {
+        const config = JSON.parse(sb);
+        $("storyboardConfigText").textContent =
+          `启用: ${config.enabled ? '是' : '否'}\n` +
+          `API URL: ${config.apiUrl || '未设置'}\n` +
+          `模型: ${config.model || '未设置'}\n` +
+          `Key: ${config.key ? config.key.substring(0, 10) + '...' : '未设置'}`;
+      } else {
+        $("storyboardConfigText").textContent = "未配置";
+      }
+
+      if (img) {
+        const config = JSON.parse(img);
+        $("imageConfigText").textContent =
+          `API URL: ${config.url || '未设置'}\n` +
+          `模型: ${config.model || '未设置'}\n` +
+          `尺寸: ${config.size || '未设置'}\n` +
+          `Key: ${config.key ? config.key.substring(0, 10) + '...' : '未设置'}`;
+      } else {
+        $("imageConfigText").textContent = "未配置";
+      }
+    }
+
+    $("showConfigs").onclick = () => {
+      updateDisplay();
+      alert("配置已更新到显示区域");
+    };
+
+    $("clearAll").onclick = () => {
+      if (confirm("确定清除所有配置？")) {
+        localStorage.removeItem(STORYBOARD_KEY);
+        localStorage.removeItem(IMAGE_KEY);
+        updateDisplay();
+        alert("✅ 所有配置已清除");
+      }
+    };
+
+    window.onload = init;
+  </script>
+</body>
+</html>
