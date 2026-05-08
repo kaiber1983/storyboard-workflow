@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>按钮测试</title>
+  <style>
+    body {
+      padding: 20px;
+      font-family: Arial, sans-serif;
+    }
+    .btn {
+      padding: 10px 20px;
+      margin: 10px;
+      cursor: pointer;
+      border: 1px solid #ccc;
+      background: #fff;
+      border-radius: 4px;
+    }
+    .btn:hover {
+      background: #f0f0f0;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      align-items: center;
+      justify-content: center;
+    }
+    .modal.show {
+      display: flex;
+    }
+    .modal-content {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 500px;
+      width: 90%;
+    }
+    .close {
+      float: right;
+      cursor: pointer;
+      font-size: 24px;
+    }
+  </style>
+</head>
+<body>
+  <h1>按钮点击测试</h1>
+
+  <button class="btn" id="btn1">⚙️ 分镜API配置</button>
+  <button class="btn" id="btn2">🎨 生图API配置</button>
+
+  <div id="log" style="margin-top: 20px; padding: 10px; background: #f5f5f5; border-radius: 4px;">
+    <strong>日志：</strong><br>
+    <div id="logContent">等待点击...</div>
+  </div>
+
+  <div class="modal" id="modal1">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('modal1')">×</span>
+      <h2>⚙️ 分镜API配置</h2>
+      <p>这是分镜API配置窗口</p>
+      <button onclick="closeModal('modal1')">关闭</button>
+    </div>
+  </div>
+
+  <div class="modal" id="modal2">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('modal2')">×</span>
+      <h2>🎨 生图API配置</h2>
+      <p>这是生图API配置窗口</p>
+      <button onclick="closeModal('modal2')">关闭</button>
+    </div>
+  </div>
+
+  <script>
+    const log = document.getElementById('logContent');
+
+    function addLog(msg) {
+      const time = new Date().toLocaleTimeString();
+      log.innerHTML += `<br>[${time}] ${msg}`;
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('show');
+      addLog(`关闭模态窗口: ${id}`);
+    }
+
+    // 方法1：直接绑定
+    document.getElementById('btn1').addEventListener('click', function() {
+      addLog('按钮1被点击（方法1）');
+      document.getElementById('modal1').classList.add('show');
+    });
+
+    document.getElementById('btn2').addEventListener('click', function() {
+      addLog('按钮2被点击（方法1）');
+      document.getElementById('modal2').classList.add('show');
+    });
+
+    // 方法2：onclick
+    document.getElementById('btn1').onclick = function() {
+      addLog('按钮1被点击（方法2 - 会覆盖方法1）');
+      document.getElementById('modal1').classList.add('show');
+    };
+
+    document.getElementById('btn2').onclick = function() {
+      addLog('按钮2被点击（方法2 - 会覆盖方法1）');
+      document.getElementById('modal2').classList.add('show');
+    };
+
+    addLog('页面加载完成');
+    addLog('按钮1: ' + (document.getElementById('btn1') ? '找到' : '未找到'));
+    addLog('按钮2: ' + (document.getElementById('btn2') ? '找到' : '未找到'));
+    addLog('模态1: ' + (document.getElementById('modal1') ? '找到' : '未找到'));
+    addLog('模态2: ' + (document.getElementById('modal2') ? '找到' : '未找到'));
+  </script>
+</body>
+</html>

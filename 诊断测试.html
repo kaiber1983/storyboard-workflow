@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>诊断测试</title>
+  <style>
+    body { padding: 20px; font-family: Arial, sans-serif; }
+    .btn { padding: 10px 20px; margin: 10px; cursor: pointer; }
+    #log { margin-top: 20px; padding: 10px; background: #f5f5f5; max-height: 400px; overflow-y: auto; }
+  </style>
+</head>
+<body>
+  <h1>诊断测试</h1>
+  <button class="btn" id="testBtn">点击测试</button>
+  <div id="log"></div>
+
+  <script>
+    const log = document.getElementById('log');
+
+    function addLog(msg) {
+      const time = new Date().toLocaleTimeString();
+      log.innerHTML += `<div>[${time}] ${msg}</div>`;
+    }
+
+    addLog('页面加载完成');
+
+    // 测试按钮
+    const btn = document.getElementById('testBtn');
+    addLog('按钮元素: ' + (btn ? '找到' : '未找到'));
+
+    // 测试事件绑定
+    btn.addEventListener('click', function() {
+      addLog('✅ addEventListener 工作正常');
+    });
+
+    btn.onclick = function() {
+      addLog('✅ onclick 工作正常');
+    };
+
+    // 模拟主页面的代码结构
+    const $ = (id) => document.getElementById(id);
+
+    function setupTest() {
+      const testBtn = $('testBtn');
+      addLog('setupTest 执行');
+      addLog('testBtn: ' + (testBtn ? '找到' : '未找到'));
+
+      if (!testBtn) {
+        addLog('❌ 错误：找不到按钮！');
+        return;
+      }
+
+      testBtn.addEventListener('click', () => {
+        addLog('✅ setupTest 中的事件监听器工作正常');
+      });
+    }
+
+    // 测试 DOMContentLoaded
+    if (document.readyState === 'loading') {
+      addLog('文档正在加载，等待 DOMContentLoaded');
+      document.addEventListener('DOMContentLoaded', () => {
+        addLog('DOMContentLoaded 触发');
+        setupTest();
+      });
+    } else {
+      addLog('文档已加载完成，直接执行 setupTest');
+      setupTest();
+    }
+
+    // 测试是否有其他脚本错误
+    window.addEventListener('error', function(e) {
+      addLog('❌ JavaScript 错误: ' + e.message);
+    });
+
+    addLog('所有初始化代码执行完成');
+  </script>
+</body>
+</html>
