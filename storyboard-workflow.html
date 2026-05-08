@@ -2056,8 +2056,17 @@ cinematic realism, smooth camera motion, natural motion, sharp face, sharp hands
     loadApiConfig();
     setupFilePreviews();
     setupCopy();
-    setupImageApiConfig();
-    setupStoryboardApiConfig();
+
+    // 确保 DOM 完全加载后再初始化配置
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        setupImageApiConfig();
+        setupStoryboardApiConfig();
+      });
+    } else {
+      setupImageApiConfig();
+      setupStoryboardApiConfig();
+    }
   </script>
 
 </body>
