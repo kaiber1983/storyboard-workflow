@@ -334,8 +334,15 @@ def build_storyboard_prompt(payload, group, group_index, agent_rules):
     style = payload.get("style") or "电影写实风格，真实摄影质感，高质量影视概念设计"
     character = payload.get("character") or "根据剧本统一设计角色，但同一角色的五官、发型、服装、体型、年龄和气质必须保持一致。"
     scene = payload.get("scene") or "根据剧本统一设计场景，但建筑结构、空间方向、光源方向、材质和氛围必须保持一致。"
-    layout = payload.get("layout") or "严格使用专业 MV 分镜故事板版式。"
-    refs = collect_refs(payload.get("refs", []))
+
+    # 检查是否有参考图
+    refs_list = payload.get("refs", [])
+    has_refs = any(ref.get("name") != "未上传" for ref in refs_list if isinstance(ref, dict))
+
+    # 如果没有参考图，layout 为空；否则使用默认值
+    layout = payload.get("layout") or ("严格使用专业 MV 分镜故事板版式。" if has_refs else "")
+
+    refs = collect_refs(refs_list)
     story_brief = "；".join(f"{shot['cut']}（{shot['time']}）：{shot['action']}" for shot in group)
     if frame_aspect == "9:16":
         frame_layout = (
