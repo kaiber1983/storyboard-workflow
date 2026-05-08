@@ -1,0 +1,148 @@
+========================================
+  Railway 部署步骤 - 跟着做就对了！
+========================================
+
+✅ 第一步：准备 GitHub 仓库
+----------------------------
+
+1. 打开 GitHub (https://github.com)
+2. 点击右上角 "+" → "New repository"
+3. 填写信息：
+   - Repository name: storyboard-workflow （或你喜欢的名字）
+   - Description: 剧本到分镜生产流程工具
+   - 选择 Public（公开）
+   - ❌ 不要勾选 "Add a README file"
+   - ❌ 不要勾选 "Add .gitignore"
+   - ❌ 不要勾选 "Choose a license"
+4. 点击 "Create repository"
+5. 复制仓库地址（类似：https://github.com/你的用户名/storyboard-workflow.git）
+
+
+✅ 第二步：上传代码到 GitHub
+----------------------------
+
+打开命令行（CMD 或 PowerShell），在项目文件夹中执行：
+
+# 初始化 Git 仓库
+git init
+
+# 添加所有文件
+git add .
+
+# 提交
+git commit -m "Initial commit: Storyboard Workflow"
+
+# 连接到你的 GitHub 仓库（替换成你的仓库地址）
+git remote add origin https://github.com/你的用户名/storyboard-workflow.git
+
+# 推送到 GitHub
+git branch -M main
+git push -u origin main
+
+如果提示需要登录，按照提示操作即可。
+
+
+✅ 第三步：部署到 Railway
+----------------------------
+
+1. 访问 Railway (https://railway.app)
+2. 点击右上角 "Login" → 选择 "Login with GitHub"
+3. 授权 Railway 访问你的 GitHub
+4. 点击 "New Project"
+5. 选择 "Deploy from GitHub repo"
+6. 找到并选择 "storyboard-workflow" 仓库
+7. 点击 "Deploy Now"
+8. 等待 2-3 分钟，Railway 会自动：
+   - 检测 railway.json 配置
+   - 安装 Python 依赖
+   - 启动服务
+
+
+✅ 第四步：生成公网域名
+----------------------------
+
+1. 在 Railway 项目页面，点击你的服务（storyboard-workflow）
+2. 切换到 "Settings" 标签
+3. 找到 "Networking" 部分
+4. 点击 "Generate Domain"
+5. Railway 会生成一个域名，例如：
+   https://storyboard-workflow-production.up.railway.app
+6. 复制这个域名
+
+
+✅ 第五步：测试你的应用
+----------------------------
+
+1. 在浏览器中打开刚才复制的域名
+2. 你应该能看到"剧本到分镜生产流程"页面
+3. 点击"填入示例"按钮
+4. 点击"生成分镜与提示词"按钮
+5. 查看是否正常生成分镜表
+
+如果一切正常，恭喜你！🎉 部署成功！
+
+
+========================================
+  可选：配置服务器端大模型
+========================================
+
+如果你想让所有用户共享一个 API 配置（不需要每个人输入）：
+
+1. 在 Railway 项目页面，点击你的服务
+2. 切换到 "Variables" 标签
+3. 点击 "New Variable"
+4. 添加以下变量：
+
+   STORYBOARD_LLM_ENABLED = true
+   LLM_BASE_URL = https://api.openai.com/v1
+   LLM_MODEL = gpt-4o-mini
+   LLM_API_KEY = sk-你的OpenAI密钥
+
+5. 点击 "Add" 保存
+6. Railway 会自动重新部署
+
+
+========================================
+  常见问题
+========================================
+
+Q: 部署失败怎么办？
+A: 在 Railway 项目页面，点击 "Deployments" → 查看 "Logs"，
+   找到错误信息，然后联系我帮你解决。
+
+Q: 访问域名显示 404？
+A: 等待 2-3 分钟，部署可能还在进行中。
+
+Q: 如何更新代码？
+A: 修改代码后，执行：
+   git add .
+   git commit -m "更新说明"
+   git push
+   Railway 会自动检测并重新部署。
+
+Q: 免费额度用完了怎么办？
+A: Railway 免费额度是 $5/月，用完后可以：
+   - 升级到付费计划（$5/月起）
+   - 迁移到 Render（完全免费但会休眠）
+
+
+========================================
+  需要帮助？
+========================================
+
+如果遇到任何问题，提供以下信息：
+1. Railway 部署日志（Logs 标签的内容）
+2. 浏览器控制台错误（按 F12 查看）
+3. 具体的错误描述
+
+我会帮你解决！
+
+
+========================================
+  完成后分享给朋友
+========================================
+
+把你的 Railway 域名发给朋友：
+https://你的域名.up.railway.app
+
+他们就可以直接使用了！无需安装任何东西。

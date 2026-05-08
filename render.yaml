@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: storyboard-workflow
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python storyboard_agent_server.py
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 10000
+      - key: PYTHON_VERSION
+        value: 3.11.0

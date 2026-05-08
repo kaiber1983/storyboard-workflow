@@ -1,0 +1,1261 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>分镜故事板工作流</title>
+  <style>
+    :root {
+      --bg: #f4f1ea;
+      --panel: #fffdf8;
+      --ink: #171717;
+      --muted: #69645c;
+      --line: #d2cbc0;
+      --line-strong: #161616;
+      --accent: #b72025;
+      --accent-2: #1e5f74;
+      --accent-3: #d6a33f;
+      --soft: #ece6dc;
+      --field: #fffaf1;
+      --ok: #287454;
+      --warn: #a76312;
+      --radius: 8px;
+      --shadow: 0 18px 48px rgba(32, 27, 19, .12);
+      font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(90deg, rgba(183,32,37,.04), transparent 38%, rgba(30,95,116,.045)),
+        var(--bg);
+    }
+
+    button, input, textarea, select { font: inherit; }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    main {
+      padding: 22px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 16px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .toolbar h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .toolbar small {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: 1px solid var(--line-strong);
+      background: var(--ink);
+      color: #fff;
+      border-radius: 6px;
+      min-height: 36px;
+      padding: 0 13px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      white-space: nowrap;
+    }
+
+    .btn.secondary {
+      background: #fffdf8;
+      color: var(--ink);
+      border-color: var(--line);
+    }
+
+    .btn.warn {
+      background: var(--accent);
+      border-color: #7a1014;
+    }
+
+    .btn:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+      outline: 3px solid rgba(30, 95, 116, .35);
+      outline-offset: 2px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(360px, .95fr) minmax(420px, 1.25fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      min-height: 50px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      background: #fbf6ec;
+    }
+
+    .section-head h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .section-head small {
+      color: var(--muted);
+    }
+
+    .body {
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .input-body {
+      padding: 10px;
+      gap: 9px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--field);
+      color: var(--ink);
+      padding: 10px 11px;
+    }
+
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+      line-height: 1.55;
+    }
+
+    .input-body textarea {
+      min-height: 82px;
+      padding: 8px 9px;
+      line-height: 1.45;
+    }
+
+    .input-body input,
+    .input-body select {
+      min-height: 34px;
+      padding: 7px 9px;
+    }
+
+    .script-field textarea {
+      min-height: 126px;
+    }
+
+    .compact-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .triplet {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+    }
+
+    .quad {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .api-panel .body {
+      gap: 10px;
+    }
+
+    .api-grid {
+      display: grid;
+      grid-template-columns: 150px minmax(220px, 1.1fr) minmax(220px, 1.1fr) minmax(150px, .8fr) minmax(220px, 1fr);
+      gap: 10px;
+      align-items: end;
+    }
+
+    .check-field {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 34px;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .check-field input {
+      width: auto;
+      min-height: auto;
+    }
+
+    .api-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .api-actions .status {
+      min-height: auto;
+      margin: 0;
+    }
+
+    .file-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .input-body .file-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .file-row {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 10px;
+      background: #fffaf1;
+      display: grid;
+      gap: 8px;
+    }
+
+    .input-body .file-row {
+      padding: 8px;
+      gap: 6px;
+    }
+
+    .file-row strong {
+      font-size: 13px;
+    }
+
+    .input-body .file-row strong {
+      font-size: 12px;
+    }
+
+    .preview {
+      display: grid;
+      grid-template-columns: 64px 1fr;
+      gap: 10px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 12px;
+      min-height: 64px;
+    }
+
+    .input-body .preview {
+      grid-template-columns: 42px minmax(0, 1fr);
+      gap: 7px;
+      min-height: 42px;
+      font-size: 11px;
+    }
+
+    .preview img {
+      width: 64px;
+      height: 64px;
+      object-fit: cover;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #eee;
+    }
+
+    .input-body .preview img {
+      width: 42px;
+      height: 42px;
+    }
+
+    .brief-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .extract-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: -2px;
+      color: var(--muted);
+      font-size: 13px;
+      flex-wrap: wrap;
+    }
+
+    .input-body .layout-preview {
+      display: none;
+    }
+
+    .shot-table-wrap {
+      overflow: auto;
+      max-height: 610px;
+      border-top: 1px solid var(--line);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1040px;
+      background: #fffdf8;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--line);
+      border-right: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+      padding: 9px;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #f0e8dc;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    td:first-child, th:first-child {
+      width: 64px;
+      text-align: center;
+      font-weight: 800;
+    }
+
+    .group-tabs {
+      display: flex;
+      gap: 8px;
+      overflow: auto;
+      padding-bottom: 2px;
+    }
+
+    .tab {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fffaf1;
+      min-height: 34px;
+      padding: 0 12px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .tab.active {
+      background: var(--accent-2);
+      border-color: var(--accent-2);
+      color: #fff;
+    }
+
+    .output-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .output-box {
+      display: grid;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .output-box textarea {
+      min-height: 390px;
+      background: #151515;
+      color: #fff6e7;
+      border-color: #151515;
+      font-size: 12px;
+    }
+
+    .copy-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .copy-row strong {
+      font-size: 14px;
+    }
+
+    .status {
+      color: var(--ok);
+      font-size: 12px;
+      min-height: 18px;
+    }
+
+    .layout-preview {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fffaf1;
+      padding: 10px;
+      display: grid;
+      gap: 5px;
+    }
+
+    .mini-title {
+      height: 18px;
+      border: 1px solid var(--line-strong);
+      background: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .mini-row {
+      display: grid;
+      grid-template-columns: 2fr 1.05fr;
+      gap: 5px;
+      height: 34px;
+    }
+
+    .mini-row div, .mini-bottom div {
+      border: 1px solid var(--line-strong);
+      background: #f5efe4;
+    }
+
+    .mini-bottom {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px;
+      height: 44px;
+    }
+
+    .mini-footer {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 5px;
+      height: 36px;
+    }
+
+    .mini-footer div {
+      border: 1px solid var(--line-strong);
+      background: #f5efe4;
+    }
+
+    .empty {
+      color: var(--muted);
+      padding: 18px;
+      line-height: 1.7;
+      background: #fffdf8;
+    }
+
+    @media (max-width: 1080px) {
+      .app { grid-template-columns: 1fr; }
+      .grid, .output-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 720px) {
+      main { padding: 12px; }
+      .toolbar { align-items: stretch; flex-direction: column; }
+      .toolbar-actions { width: 100%; }
+      .btn { flex: 1 1 auto; }
+      .compact-row, .triplet, .quad, .api-grid { grid-template-columns: 1fr; }
+      .section-head { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <main>
+      <div class="toolbar">
+        <div>
+          <h2>剧本到分镜生产流程</h2>
+          <small id="backendStatus">后端：Storyboard Agent 未连接</small>
+        </div>
+        <div class="toolbar-actions">
+          <button class="btn secondary" id="loadDemo" type="button">填入示例</button>
+          <button class="btn warn" id="generate" type="button">生成分镜与提示词</button>
+          <button class="btn secondary" id="reset" type="button">清空</button>
+        </div>
+      </div>
+
+      <section class="api-panel">
+        <div class="section-head">
+          <h3>API 调用窗口</h3>
+          <small>OpenAI 兼容接口，启用后优先调用大模型生成内容</small>
+        </div>
+        <div class="body">
+          <div class="api-grid">
+            <label class="check-field">
+              <input id="apiEnabled" type="checkbox" />
+              启用大模型
+            </label>
+            <label>
+              后端 API 地址
+              <input id="backendBaseUrl" placeholder="留空则自动使用当前网站后端" />
+            </label>
+            <label>
+              API Base URL
+              <input id="apiBaseUrl" placeholder="https://api.openai.com/v1" />
+            </label>
+            <label>
+              模型
+              <input id="apiModel" placeholder="gpt-4o-mini" />
+            </label>
+            <label>
+              API Key
+              <input id="apiKey" type="password" placeholder="sk-..." autocomplete="off" />
+            </label>
+          </div>
+          <div class="api-actions">
+            <label class="check-field">
+              <input id="apiRemember" type="checkbox" />
+              记住到本机浏览器
+            </label>
+            <button class="btn secondary" id="saveApi" type="button">保存配置</button>
+            <button class="btn secondary" id="testApi" type="button">测试 API</button>
+            <span class="status" id="apiStatus">未启用时使用本地规则生成。</span>
+          </div>
+        </div>
+      </section>
+
+      <div class="grid">
+        <section>
+          <div class="section-head">
+            <h3>输入</h3>
+            <small>剧本和参考信息</small>
+          </div>
+          <div class="body input-body">
+            <label class="script-field">
+              剧本
+              <textarea id="scriptInput" placeholder="输入剧情、动作、情绪、地点、角色关系。例如：女团成员在白色未来走廊单人高光，先低头站定，随后抬头冷眼看向镜头，迈步、抬手碰领、最后定格。"></textarea>
+            </label>
+
+            <div class="quad">
+              <label>
+                总时长
+                <input id="duration" value="15s" />
+              </label>
+              <label>
+                每组分镜
+                <select id="groupSize">
+                  <option value="4">4 个 Cut</option>
+                  <option value="5" selected>5 个 Cut</option>
+                  <option value="6">6 个 Cut</option>
+                </select>
+              </label>
+              <label>
+                故事板画幅
+                <select id="ratio">
+                  <option value="3:4">3:4 故事板</option>
+                  <option value="9:16" selected>9:16 竖屏</option>
+                  <option value="16:9">16:9 横屏</option>
+                  <option value="1:1">1:1 方图</option>
+                </select>
+              </label>
+              <label>
+                分镜画面比例
+                <select id="frameAspect">
+                  <option value="16:9" selected>16:9 横向画面</option>
+                  <option value="9:16">9:16 竖向画面</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="compact-row">
+              <label>
+                项目标题
+                <input id="projectTitle" value="MV舞蹈分镜故事板" />
+              </label>
+              <label>
+                风格
+                <input id="styleInput" value="电影写实风格，真实摄影质感，高质量影视概念设计" />
+              </label>
+            </div>
+
+            <div class="brief-grid">
+              <label>
+                角色设定
+                <textarea id="characterInput" placeholder="可留空。生成时会自动从剧本提炼出现的人物、角色名称、外貌特征、服装气质；如需指定参考图用途，可在这里补充。"></textarea>
+              </label>
+
+              <label>
+                场景设定
+                <textarea id="sceneInput" placeholder="可留空。生成时会自动从剧本提炼对应场景，补全建筑结构、空间方向、材质、灯光、道具和行动区域。"></textarea>
+              </label>
+            </div>
+
+            <div class="extract-row">
+              <button class="btn secondary" id="extractInfo" type="button">提取剧本人物和场景</button>
+              <span id="extractStatus">会覆盖当前角色设定和场景设定，便于重新分析剧本资产。</span>
+            </div>
+
+            <label>
+              版式锁定要求
+              <textarea id="layoutInput">严格按照“版式1.png”的专业 MV 舞蹈分镜故事板版式：顶部左侧大标题，右上角总时长/组号；标题下方一条红色版式提示栏；中部为 5 条横向 Cut 行，每个 Cut 单元必须左右 50/50 分栏，左侧 50% 是精准 16:9 分镜画面框，右侧 50% 是白底文字信息区；人物台词必须放在右侧文字区，不得写进画面里；每个分镜框左上角黑底白字 Cut 编号；下方并排“俯视场景图”和“关键空间关系”；最底部三栏“灯光示意图”“色彩参考”“氛围关键词”。白色或米白纸面背景，细黑线分隔，网格整齐，文字清晰。</textarea>
+            </label>
+
+            <div class="file-grid" id="fileGrid">
+              <div class="file-row">
+                <strong>角色参考图</strong>
+                <input type="file" accept="image/*" data-role="角色参考图" />
+                <input placeholder="用途说明：如图1作为主角参考，保持五官、发型、服装、体态和气质一致" data-desc />
+                <div class="preview"><span></span><em>未选择图片</em></div>
+              </div>
+              <div class="file-row">
+                <strong>场景参考图</strong>
+                <input type="file" accept="image/*" data-role="场景参考图" />
+                <input placeholder="用途说明：如图2作为场景参考，保持建筑、空间、材质、灯光一致" data-desc />
+                <div class="preview"><span></span><em>未选择图片</em></div>
+              </div>
+              <div class="file-row">
+                <strong>版式参考图</strong>
+                <input type="file" accept="image/*" data-role="版式参考图" />
+                <input placeholder="用途说明：如图3只作为排版参考，不改变剧情和场景" data-desc />
+                <div class="preview"><span></span><em>未选择图片</em></div>
+              </div>
+            </div>
+
+            <div class="layout-preview" aria-label="版式预览">
+              <div class="mini-title">标题区</div>
+              <div class="mini-row"><div></div><div></div></div>
+              <div class="mini-row"><div></div><div></div></div>
+              <div class="mini-row"><div></div><div></div></div>
+              <div class="mini-row"><div></div><div></div></div>
+              <div class="mini-row"><div></div><div></div></div>
+              <div class="mini-bottom"><div></div><div></div></div>
+              <div class="mini-footer"><div></div><div></div><div></div></div>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="section-head">
+            <h3>详细分镜表</h3>
+            <small id="shotCount">等待生成</small>
+          </div>
+          <div id="emptyTable" class="empty">输入剧本后点击“生成分镜与提示词”，这里会产出包含叙事功能、景别、机位、运镜、导演调度、主体、动作、画面描述、台词、音效、节奏的详细分镜表。</div>
+          <div class="shot-table-wrap" id="tableWrap" hidden>
+            <table>
+              <thead>
+                <tr>
+                  <th>Cut</th>
+                  <th>时序</th>
+                  <th>叙事功能</th>
+                  <th>景别</th>
+                  <th>机位</th>
+                  <th>运镜</th>
+                  <th>导演调度</th>
+                  <th>主体</th>
+                  <th>动作</th>
+                  <th>画面描述</th>
+                  <th>台词</th>
+                  <th>音效</th>
+                  <th>节奏</th>
+                </tr>
+              </thead>
+              <tbody id="shotBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <section>
+        <div class="section-head">
+          <h3>分组提示词</h3>
+          <small>每组 4-6 个分镜</small>
+        </div>
+        <div class="body">
+          <div class="group-tabs" id="groupTabs"></div>
+          <div class="output-grid">
+            <div class="output-box">
+              <div class="copy-row">
+                <strong>分镜图片提示词</strong>
+                <button class="btn secondary" data-copy="imagePrompt" type="button">复制</button>
+              </div>
+              <textarea id="imagePrompt" readonly placeholder="生成后显示"></textarea>
+              <div class="status" id="imageCopyStatus"></div>
+            </div>
+            <div class="output-box">
+              <div class="copy-row">
+                <strong>分镜图片转视频提示词</strong>
+                <button class="btn secondary" data-copy="videoPrompt" type="button">复制</button>
+              </div>
+              <textarea id="videoPrompt" readonly placeholder="生成后显示"></textarea>
+              <div class="status" id="videoCopyStatus"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const state = { shots: [], groups: [], activeGroup: 0, refs: [] };
+    const API_STORAGE_KEY = "storyboardApiConfig";
+
+    const lensPlan = [
+      ["远景", "平视略低机位", "固定轻推", "交代环境", "建立空间方向与角色起点"],
+      ["中全景", "正面平视", "横移跟拍", "推进动作", "展示动作起因与身体方向"],
+      ["半身近景", "正面略仰", "慢速推进", "强化情绪", "聚焦表情、手部和上半身动作"],
+      ["近景", "侧前方 30 度", "轻微横移", "揭示信息", "衔接上一镜动作的关键细节"],
+      ["特写", "正面平视", "固定镜头", "强化情绪", "突出眼神、道具、发丝或手部细节"],
+      ["中近景", "正面略低", "快速推进后固定", "完成转折", "完成动作结果与高光定格"]
+    ];
+
+    function splitScript(text) {
+      const cleaned = text.replace(/\s+/g, " ").trim();
+      if (!cleaned) return [];
+      const parts = cleaned
+        .split(/(?<=[。！？!?；;])|(?:\s*[\n\r]+\s*)/)
+        .map(s => s.trim())
+        .filter(Boolean);
+      if (parts.length >= 4) return parts;
+      return cleaned
+        .split(/[，,、]/)
+        .map(s => s.trim())
+        .filter(Boolean);
+    }
+
+    function normalizeCutCount(parts, groupSize) {
+      const count = Math.max(groupSize, Math.min(18, parts.length || groupSize));
+      if (parts.length >= count) return parts.slice(0, count);
+      const fillers = [
+        "建立主要场景与人物状态",
+        "角色进入动作，形成清楚的运动方向",
+        "推进关键动作，保持动作匹配剪辑",
+        "进入情绪近景，强调眼神和手部细节",
+        "完成动作转折或队形变化",
+        "以高光定格收束本组镜头"
+      ];
+      const next = parts.slice();
+      while (next.length < count) next.push(fillers[next.length % fillers.length]);
+      return next;
+    }
+
+    function timeRange(index, total, durationText) {
+      const duration = Number((durationText.match(/\d+(\.\d+)?/) || ["15"])[0]);
+      const start = Math.round((duration / total) * index * 10) / 10;
+      const end = Math.round((duration / total) * (index + 1) * 10) / 10;
+      return `${trimNum(start)}-${trimNum(end)}s`;
+    }
+
+    function trimNum(num) {
+      return Number.isInteger(num) ? String(num) : num.toFixed(1);
+    }
+
+    function actionKeyword(text, index) {
+      const presets = ["起势", "推进", "抬手", "转身", "眼神", "定格"];
+      const words = text.replace(/[。！？!?，,；;、]/g, " ").split(/\s+/).filter(Boolean);
+      const short = words.find(w => w.length >= 2 && w.length <= 8);
+      return short ? `${short} / ${presets[index % presets.length]}` : `${presets[index % presets.length]} / 情绪推进`;
+    }
+
+    function buildShots() {
+      const rawParts = splitScript($("scriptInput").value);
+      const groupSize = Number($("groupSize").value);
+      const parts = normalizeCutCount(rawParts, groupSize);
+      const total = parts.length;
+      return parts.map((part, index) => {
+        const plan = lensPlan[Math.min(index, lensPlan.length - 1)] || lensPlan[index % lensPlan.length];
+        const isLast = index === total - 1;
+        const motion = isLast ? "快速推进后固定" : plan[2];
+        const functionName = isLast ? "完成转折" : plan[3];
+        return {
+          cut: `Cut${index + 1}`,
+          time: timeRange(index, total, $("duration").value),
+          functionName,
+          shotSize: plan[0],
+          angle: plan[1],
+          camera: motion,
+          blocking: `保持同一轴线与空间方向；角色从上一镜动作自然延续，视线与运动方向清楚；${plan[4]}。`,
+          subject: "核心角色、关键道具、当前场景环境元素",
+          action: part,
+          description: `围绕“${part}”设计画面：先保证主体清晰，再用构图、光影和背景关系强化情绪；每镜保留 1-2 个视觉重点，动作与上一镜连续。`,
+          dialogue: "无",
+          sound: isLast ? "音乐强拍、环境声回落、动作停顿" : "环境声、动作声、音乐节拍",
+          rhythm: isLast ? "爆发 / 定格" : ["缓慢", "律动", "紧张", "聚焦", "压迫"][index % 5],
+          keyword: actionKeyword(part, index)
+        };
+      });
+    }
+
+    function renderTable() {
+      const body = $("shotBody");
+      body.innerHTML = "";
+      state.shots.forEach((shot, index) => {
+        const row = document.createElement("tr");
+        [
+          index + 1,
+          shot.time,
+          shot.functionName,
+          shot.shotSize,
+          shot.angle,
+          shot.camera,
+          shot.blocking,
+          shot.subject,
+          shot.action,
+          shot.description,
+          shot.dialogue,
+          shot.sound,
+          shot.rhythm
+        ].forEach(value => {
+          const cell = document.createElement("td");
+          cell.textContent = value;
+          row.appendChild(cell);
+        });
+        body.appendChild(row);
+      });
+      $("emptyTable").hidden = state.shots.length > 0;
+      $("tableWrap").hidden = state.shots.length === 0;
+      $("shotCount").textContent = state.shots.length ? `${state.shots.length} 个 Cut` : "等待生成";
+    }
+
+    function chunkShots(shots, size) {
+      const groups = [];
+      for (let i = 0; i < shots.length; i += size) groups.push(shots.slice(i, i + size));
+      return groups;
+    }
+
+    function renderTabs() {
+      const tabs = $("groupTabs");
+      tabs.innerHTML = "";
+      state.groups.forEach((group, index) => {
+        const btn = document.createElement("button");
+        btn.className = `tab${index === state.activeGroup ? " active" : ""}`;
+        btn.type = "button";
+        btn.textContent = group.label || `第 ${index + 1} 组`;
+        btn.addEventListener("click", () => {
+          state.activeGroup = index;
+          renderTabs();
+          renderPrompts();
+        });
+        tabs.appendChild(btn);
+      });
+    }
+
+    function collectRefs() {
+      state.refs = [...document.querySelectorAll(".file-row")].map((row, index) => {
+        const file = row.querySelector("input[type=file]").files[0];
+        const role = row.querySelector("input[type=file]").dataset.role;
+        const desc = row.querySelector("[data-desc]").value.trim();
+        return {
+          label: `图${index + 1}`,
+          role,
+          name: file ? file.name : "未上传",
+          desc
+        };
+      });
+    }
+
+    function buildAgentPayload() {
+      return {
+        script: $("scriptInput").value.trim(),
+        duration: $("duration").value.trim(),
+        groupSize: Number($("groupSize").value),
+        ratio: $("ratio").value,
+        frameAspect: $("frameAspect").value,
+        projectTitle: $("projectTitle").value.trim(),
+        style: $("styleInput").value.trim(),
+        character: $("characterInput").value.trim(),
+        scene: $("sceneInput").value.trim(),
+        layout: $("layoutInput").value.trim(),
+        api: getApiConfig(),
+        refs: state.refs
+      };
+    }
+
+    function getApiConfig() {
+      return {
+        enabled: $("apiEnabled").checked,
+        baseUrl: $("apiBaseUrl").value.trim(),
+        model: $("apiModel").value.trim(),
+        apiKey: $("apiKey").value.trim()
+      };
+    }
+
+    function getBackendBaseUrl() {
+      const custom = $("backendBaseUrl").value.trim().replace(/\/+$/, "");
+      if (custom) return custom;
+      if (location.protocol === "file:") return "http://127.0.0.1:8787";
+      return "";
+    }
+
+    function agentUrl(path) {
+      return `${getBackendBaseUrl()}${path}`;
+    }
+
+    function saveApiConfig() {
+      const config = {
+        enabled: $("apiEnabled").checked,
+        backendBaseUrl: $("backendBaseUrl").value.trim(),
+        baseUrl: $("apiBaseUrl").value.trim(),
+        model: $("apiModel").value.trim(),
+        apiKey: $("apiKey").value.trim(),
+        remember: $("apiRemember").checked
+      };
+      if (config.remember) {
+        localStorage.setItem(API_STORAGE_KEY, JSON.stringify(config));
+        $("apiStatus").textContent = "API 配置已保存到本机浏览器。";
+      } else {
+        localStorage.removeItem(API_STORAGE_KEY);
+        $("apiStatus").textContent = "已关闭本机保存，本次页面仍可使用当前配置。";
+      }
+    }
+
+    function loadApiConfig() {
+      try {
+        const raw = localStorage.getItem(API_STORAGE_KEY);
+        if (!raw) {
+          $("apiBaseUrl").value = "https://api.openai.com/v1";
+          return;
+        }
+        const config = JSON.parse(raw);
+        $("apiEnabled").checked = Boolean(config.enabled);
+        $("backendBaseUrl").value = config.backendBaseUrl || "";
+        $("apiBaseUrl").value = config.baseUrl || "https://api.openai.com/v1";
+        $("apiModel").value = config.model || "";
+        $("apiKey").value = config.apiKey || "";
+        $("apiRemember").checked = Boolean(config.remember);
+        $("apiStatus").textContent = config.enabled ? "已加载本机 API 配置。" : "已加载配置，当前未启用大模型。";
+      } catch {
+        $("apiBaseUrl").value = "https://api.openai.com/v1";
+      }
+    }
+
+    async function callStoryboardAgent() {
+      const response = await fetch(agentUrl("/agent/storyboard"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(buildAgentPayload())
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || `HTTP ${response.status}`);
+      }
+      return response.json();
+    }
+
+    async function callExtractAgent() {
+      const response = await fetch(agentUrl("/agent/extract"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ script: $("scriptInput").value.trim(), api: getApiConfig() })
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || response.statusText);
+      }
+      return response.json();
+    }
+
+    async function testApiConfig() {
+      $("apiStatus").textContent = "正在测试 API...";
+      try {
+        const response = await fetch(agentUrl("/agent/extract"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            script: $("scriptInput").value.trim() || "女团成员在夜晚霓虹街角热舞，红色夹克，黑色工装裤。",
+            api: getApiConfig()
+          })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || response.statusText);
+        $("apiStatus").textContent = result.usedLLM ? "API 测试成功，已调用大模型。" : "接口可用，但当前使用本地规则；请检查是否启用并填写 Key。";
+      } catch (error) {
+        $("apiStatus").textContent = `API 测试失败：${error.message}`;
+      }
+    }
+
+    function refText() {
+      const active = state.refs.filter(ref => ref.name !== "未上传" || ref.desc);
+      if (!active.length) return "无参考图，根据剧本统一设计人物与场景，但必须保持每个分镜连续一致。";
+      return active.map(ref => `${ref.label}（${ref.role}）：${ref.name}${ref.desc ? `。${ref.desc}` : ""}`).join("\n");
+    }
+
+    function buildStoryboardPrompt(group) {
+      const title = $("projectTitle").value.trim() || "MV舞蹈分镜故事板";
+      const subtitle = `总时长 ${$("duration").value.trim() || "15s"} / 第 ${state.activeGroup + 1} 组`;
+      const frameAspect = $("frameAspect").value || "16:9";
+      const frameLayout = frameAspect === "9:16"
+        ? "分镜画面比例固定为 9:16。每个 Cut 单元必须左右 50/50 分栏，左侧 50% 为 9:16 竖向分镜画面区，右侧 50% 为白底文字信息区；人物台词必须放在右侧文字区，不得写进画面里。"
+        : "16:9 版式必须参考“版式1.png”的布局：顶部左侧大标题，右上角总时长/组号，标题下方红色版式提示栏，中部 5 条横向 Cut 行；每个 Cut 单元必须左右 50/50 分栏，左侧 50% 为精准 16:9 分镜画面框，右侧 50% 为白底文字信息区；下方两栏空间图，底部三栏灯光/色彩/氛围。人物台词必须放在右侧文字区，不得写进画面里。";
+      const storyBrief = group.map(shot => `${shot.cut}（${shot.time}）：${shot.action}`).join("；");
+      const cuts = group.map((shot, i) => {
+        return `第 ${i + 1} 行：
+左侧画面：${shot.cut}，${shot.time}，${shot.shotSize}。${shot.description}
+右侧文字：
+镜号：${shot.cut}
+时序：${shot.time}
+景别：${shot.shotSize}
+动作关键词：${shot.keyword}
+调度关键词：${shot.camera} / ${shot.functionName}
+台词：${shot.dialogue}`;
+      }).join("\n\n");
+
+      return `生成一张用于影片制作的专业分镜故事板图片，画幅比例 ${$("ratio").value}，${$("styleInput").value.trim() || "电影写实风格，真实摄影质感，高质量影视概念设计"}。
+
+故事板内容：
+${storyBrief}
+
+参考图使用：
+${refText()}
+
+人物与场景设定：
+角色设定：${$("characterInput").value.trim() || "根据剧本统一设计角色，但同一角色的五官、发型、服装、体型、年龄和气质必须保持一致。"}
+场景设定：${$("sceneInput").value.trim() || "根据剧本统一设计场景，但建筑结构、空间方向、光源方向、材质和氛围必须保持一致。"}
+
+版式锁定：
+${$("layoutInput").value.trim()}
+
+分镜画面尺寸：
+${frameLayout}
+
+顶部标题：
+主标题：${title}
+副标题：${subtitle}
+
+整体要求：
+这是一张完整的视频生产型分镜故事板，不是单张电影海报，也不是纯文字表格。画面必须同时包含主分镜板、场景图、光影与氛围三个模块。所有分镜必须保持同一角色、同一场景、同一道具、同一光影方向和同一色调体系的连续性。动作从前一镜自然延续到后一镜，镜头方向清楚，不要跳轴。必须符合导演调度和剪辑语法：先建立空间关系，再推进动作和情绪；遵守 180 度轴线规则、视线匹配、运动方向连续、动作匹配剪辑；每个镜头必须有明确叙事功能和运镜动机。
+
+--- 分镜板（主模块）---
+严格使用 ${group.length} 个 Cut 单元。每个 Cut 单元必须左右 50/50 分栏，左侧 50% 是分镜画面区，只放该 Cut 画面；右侧 50% 是白底文字信息区，只放文字。人物台词必须放在右侧文字信息区展示，不能写在分镜画面内部。右侧文字区必须包含镜号、时序、景别、动作关键词、调度关键词、台词；如无台词写“台词：无”。每个小分镜画面必须严格保持 ${frameAspect} 比例，所有分镜画面尺寸一致，不能出现忽宽忽窄、忽横忽竖、比例变形、画面互相重叠。${frameLayout}
+
+${cuts}
+
+--- 场景图（Secondary）---
+位置：分镜板下方，生成 2 张空间参考图。
+1. 俯视场景图：展示主要空间布局、角色起点、动作推进方向、关键道具位置、最终定格位置，只使用短标签和箭头。
+2. 关键空间关系：展示场景纵深、入口、背景结构、主机位方向、光源位置和轴线关系，继承参考图或剧本中的核心环境。
+
+--- 光影与氛围（Lighting & Mood）---
+位置：画面底部三栏排列。
+灯光示意图：主光、环境光、轮廓光、特殊光源方向。
+色彩参考：3-6 个主要色块，来自角色服装、场景主色和关键光源。
+氛围关键词：3-6 个关键词，准确表达本组镜头情绪。
+
+清晰度与降噪：
+clean image, low noise, minimal grain, clean shadows, simplified background texture, sharp subject, readable layout, no dirty noise, no compression artifacts. 暗部保留层次但不要脏黑；背景减少高频纹理；每个分镜只保留 1-2 个视觉重点；人物脸部、手部、关键道具、分镜边框和文字区域必须优先清晰。
+
+避免：
+不要自由排版；不要生成单张电影海报；不要生成纯文字表格；不要生成漫画风格，除非明确要求；不要出现多余角色；不要让同一角色变成不同人；不要出现重复脸、错乱五官、畸形手、错乱文字；不要让分镜格互相重叠；不要让文字遮挡关键画面；不要改变参考图中的核心人物和核心场景；不要强胶片颗粒、脏噪点、低清压缩伪影、过量烟雾、暗部糊成一片、背景满屏细碎纹理、过度锐化、过度运动模糊。`;
+    }
+
+    function buildVideoPrompt(group) {
+      const lines = group.map(shot => `${shot.time}：${shot.shotSize}，${shot.angle}，${shot.camera}。${shot.action}。${shot.blocking}`).join("\n");
+      return `根据当前分镜故事板图片，生成一段电影写实视频。参考图和故事板中的人物、场景、服装、道具、光影、色调必须保持一致。
+
+视频时长：${$("duration").value.trim() || "15s"}
+本组镜头：${group[0].cut} 至 ${group[group.length - 1].cut}
+风格：${$("styleInput").value.trim() || "电影写实风格，真实摄影质感，高质量 MV / 短片镜头"}
+
+参考图使用：
+${refText()}
+
+人物与场景：
+角色设定：${$("characterInput").value.trim() || "保持故事板中同一角色的五官、发型、服装、体型、年龄和气质一致。"}
+场景设定：${$("sceneInput").value.trim() || "保持故事板中同一场景的建筑结构、空间方向、材质、道具和光源方向一致。"}
+
+镜头时间线：
+${lines}
+
+视频连续性：
+动作必须从上一镜自然延续到下一镜；保持 180 度轴线、视线匹配、运动方向连续和动作匹配剪辑；不要无故跳轴；不要让角色位置、手部、头部、身体朝向、道具位置在相邻镜头中突然改变。重要动作必须有起因、过程和结果，重要情绪用近景或特写强化。
+
+镜头语言：
+先建立空间关系，再推进动作和情绪。每一次运镜都必须有明确动机：推进用于靠近人物情绪或发现关键动作，横移用于跟随行动，固定镜头用于压迫、冷静观察或定格。景别要有变化，不要连续使用几乎相同的角度和景别。
+
+画质与光影：
+cinematic realism, smooth camera motion, natural motion, sharp face, sharp hands, clean image, low noise, minimal grain, clean shadows, no dirty noise, no compression artifacts. 光影、色彩和氛围继承故事板，暗部保留层次，背景细节不要抢主体。
+
+避免：
+不要换脸；不要换服装；不要改变发型；不要改变场景结构；不要出现多余角色；不要错乱五官；不要畸形手；不要镜头乱跳；不要过度运动模糊；不要低清压缩伪影；不要文字水印。`;
+    }
+
+    function renderPrompts() {
+      if (!state.groups.length) return;
+      const group = state.groups[state.activeGroup];
+      $("imagePrompt").value = group.imagePrompt || buildStoryboardPrompt(group);
+      $("videoPrompt").value = group.videoPrompt || buildVideoPrompt(group);
+    }
+
+    async function generateAll() {
+      collectRefs();
+      $("backendStatus").textContent = "后端：正在调用 Storyboard Agent...";
+      try {
+        const result = await callStoryboardAgent();
+        if (!$("characterInput").value.trim() && result.inferredCharacter) {
+          $("characterInput").value = result.inferredCharacter;
+        }
+        if (!$("sceneInput").value.trim() && result.inferredScene) {
+          $("sceneInput").value = result.inferredScene;
+        }
+        state.shots = result.shots || [];
+        state.groups = result.groups || [];
+        state.activeGroup = 0;
+        $("backendStatus").textContent = `后端：已连接 Storyboard Agent（${result.agentSource || "AGENTS.md"}）`;
+        $("apiStatus").textContent = result.usedLLM
+          ? "本次生成已调用大模型。"
+          : (result.llmError ? `大模型调用失败，已回退本地规则：${result.llmError}` : "本次使用本地规则生成。");
+        renderTable();
+        renderTabs();
+        renderPrompts();
+      } catch (error) {
+        $("backendStatus").textContent = "后端：未连接，请先启动 storyboard_agent_server.py";
+        alert(`Storyboard Agent 后端未连接。\n\n请在项目目录运行：python storyboard_agent_server.py\n\n错误：${error.message}`);
+      }
+    }
+
+    async function extractInfo() {
+      const script = $("scriptInput").value.trim();
+      if (!script) {
+        $("extractStatus").textContent = "请先输入剧本，再提取人物和场景。";
+        $("scriptInput").focus();
+        return;
+      }
+      $("extractStatus").textContent = "正在提取人物和场景...";
+      $("backendStatus").textContent = "后端：正在提取剧本人物和场景...";
+      try {
+        const result = await callExtractAgent();
+        $("characterInput").value = result.inferredCharacter || "";
+        $("sceneInput").value = result.inferredScene || "";
+        $("extractStatus").textContent = "已提取并填入角色设定和场景设定。";
+        $("apiStatus").textContent = result.usedLLM
+          ? "本次提取已调用大模型。"
+          : (result.llmError ? `大模型调用失败，已回退本地规则：${result.llmError}` : "本次使用本地规则提取。");
+        $("backendStatus").textContent = `后端：已连接 Storyboard Agent（${result.agentSource || "AGENTS.md"}）`;
+      } catch (error) {
+        $("extractStatus").textContent = "提取失败，请先启动 storyboard_agent_server.py。";
+        $("backendStatus").textContent = "后端：未连接，请先启动 storyboard_agent_server.py";
+        alert(`Storyboard Agent 后端未连接。\n\n请在项目目录运行：python storyboard_agent_server.py\n\n错误：${error.message}`);
+      }
+    }
+
+    function resetAll() {
+      ["scriptInput", "characterInput", "sceneInput", "imagePrompt", "videoPrompt"].forEach(id => $(id).value = "");
+      $("duration").value = "15s";
+      $("ratio").value = "9:16";
+      $("frameAspect").value = "16:9";
+      $("projectTitle").value = "MV舞蹈分镜故事板";
+      $("styleInput").value = "电影写实风格，真实摄影质感，高质量影视概念设计";
+      document.querySelectorAll("input[type=file]").forEach(input => input.value = "");
+      document.querySelectorAll("[data-desc]").forEach(input => input.value = "");
+      document.querySelectorAll(".preview").forEach(preview => {
+        preview.innerHTML = "<span></span><em>未选择图片</em>";
+      });
+      state.shots = [];
+      state.groups = [];
+      $("groupTabs").innerHTML = "";
+      $("extractStatus").textContent = "会覆盖当前角色设定和场景设定，便于重新分析剧本资产。";
+      renderTable();
+    }
+
+    function loadDemo() {
+      $("scriptInput").value = "女团成员在纯白未来走廊完成单人高光。她先站在走廊中轴尽头，冷静看向镜头；随后低机位推进，她迈出一步，下巴微收；她停步侧转，抬手碰到黑色 choker 和红色夹克衣领；镜头进入特写，她微微偏头，用冷淡锋利的眼神凝视镜头；最后她单手插袋，另一只手扶住夹克边缘，在镜面地面和线性灯带中完成高冷模特范定格。";
+      $("characterInput").value = "年轻亚洲女性，黑色长直发齐刘海，冷感精致五官，红色短夹克，白色短背心，黑色宽松工装裤，黑红运动鞋，黑色 choker，金属项链，黑色手套。保持高冷、帅酷、疏离、自信的模特范。";
+      $("sceneInput").value = "纯白未来感走廊，白色光滑墙面，几何立柱，线性 LED 灯带，镜面反光地面，干净、高级、冷白、极简。保持走廊对称结构和中轴方向。";
+      generateAll();
+    }
+
+    function setupFilePreviews() {
+      document.querySelectorAll("input[type=file]").forEach(input => {
+        input.addEventListener("change", () => {
+          const file = input.files[0];
+          const preview = input.closest(".file-row").querySelector(".preview");
+          if (!file) {
+            preview.innerHTML = "<span></span><em>未选择图片</em>";
+            return;
+          }
+          const url = URL.createObjectURL(file);
+          preview.innerHTML = `<img alt="" src="${url}"><em>${file.name}</em>`;
+        });
+      });
+    }
+
+    async function copyText(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+      const helper = document.createElement("textarea");
+      helper.value = text;
+      helper.setAttribute("readonly", "");
+      helper.style.position = "fixed";
+      helper.style.opacity = "0";
+      document.body.appendChild(helper);
+      helper.select();
+      const ok = document.execCommand("copy");
+      helper.remove();
+      return ok;
+    }
+
+    function setupCopy() {
+      document.querySelectorAll("[data-copy]").forEach(button => {
+        button.addEventListener("click", async () => {
+          const id = button.dataset.copy;
+          const text = $(id).value;
+          if (!text) return;
+          const status = id === "imagePrompt"
+            ? $("imageCopyStatus")
+            : $("videoCopyStatus");
+          const ok = await copyText(text);
+          status.textContent = ok ? "已复制" : "复制失败，请手动全选复制";
+          setTimeout(() => status.textContent = "", 1500);
+        });
+      });
+    }
+
+    $("generate").addEventListener("click", generateAll);
+    $("extractInfo").addEventListener("click", extractInfo);
+    $("saveApi").addEventListener("click", saveApiConfig);
+    $("testApi").addEventListener("click", testApiConfig);
+    $("reset").addEventListener("click", resetAll);
+    $("loadDemo").addEventListener("click", loadDemo);
+    loadApiConfig();
+    setupFilePreviews();
+    setupCopy();
+  </script>
+</body>
+</html>
