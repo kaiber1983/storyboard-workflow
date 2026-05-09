@@ -572,224 +572,258 @@
     }
 
     /* 折叠式API配置面板 */
-    .api-config-panel {
-      display: none;
-      margin-top: 16px;
-      padding: 20px;
-      background: var(--panel);
-      border: 2px solid var(--line);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-    }
+  /* 折叠式API配置面板 - 美化版 */
+.api-config-panel {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  padding: 28px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.15), 0 8px 16px rgba(0, 0, 0, 0.1);
+  max-width: 520px;
+  width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+}
 
-    .api-config-panel.show {
-      display: block;
-      animation: slideDown 0.3s ease-out;
-    }
+.api-config-panel.show {
+  display: block;
+  animation: modalSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
 
-    @keyframes slideDown {
-      from {
-        opacity: 0;
-        transform: translateY(-10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -45%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
 
-    .api-config-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-      padding-bottom: 12px;
-      border-bottom: 2px solid var(--line);
-    }
+/* 遮罩层 */
+.api-config-panel::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(23, 23, 23, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: -1;
+}
 
-    .api-config-header h3 {
-      font-size: 16px;
-      color: var(--ink);
-      margin: 0;
-    }
+.api-config-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e8e8e8;
+}
 
-    .api-config-close {
-      cursor: pointer;
-      color: var(--muted);
-      font-size: 20px;
-      padding: 4px 8px;
-      border-radius: 4px;
-      transition: all 0.2s;
-    }
+.api-config-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-    .api-config-close:hover {
-      background: var(--accent);
-      color: white;
-    }
+.api-config-close {
+  cursor: pointer;
+  color: #666;
+  font-size: 28px;
+  font-weight: 300;
+  padding: 4px 10px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  line-height: 1;
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+}
 
-    .api-config-form {
-      display: grid;
-      gap: 14px;
-    }
+.api-config-close:hover {
+  background: #b72025;
+  color: white;
+  border-color: #b72025;
+  transform: rotate(90deg);
+}
 
-    .api-config-field {
-      display: grid;
-      gap: 6px;
-    }
+.api-config-form {
+  display: grid;
+  gap: 18px;
+}
 
-    .api-config-field label {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--ink);
-    }
+.api-config-field {
+  display: grid;
+  gap: 8px;
+}
 
-    .api-config-field input,
-    .api-config-field select {
-      padding: 10px 12px;
-      border: 1px solid var(--line);
-      border-radius: 6px;
-      background: var(--field);
-      font-size: 14px;
-      width: 100%;
-    }
+.api-config-field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2c2c2c;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
 
-    .api-config-field input:focus,
-    .api-config-field select:focus {
-      border-color: var(--accent);
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(183, 32, 37, 0.1);
-    }
+.api-config-field input,
+.api-config-field select {
+  padding: 11px 14px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 14px;
+  width: 100%;
+  transition: all 0.2s ease;
+  color: #1a1a1a;
+}
 
-    .api-config-hint {
-      font-size: 11px;
-      color: var(--muted);
-      line-height: 1.5;
-    }
+.api-config-field input:focus,
+.api-config-field select:focus {
+  border-color: #1e5f74;
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(30, 95, 116, 0.1);
+  background: #fafafa;
+}
 
-    .api-config-actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 16px;
-      padding-top: 16px;
-      border-top: 1px solid var(--line);
-    }
+.api-config-field input[type="checkbox"] {
+  width: auto;
+  margin-right: 8px;
+  cursor: pointer;
+}
 
-    .api-config-status {
-      margin-top: 12px;
-      padding: 10px 12px;
-      border-radius: 6px;
-      font-size: 12px;
-      display: none;
-    }
+.api-config-hint {
+  font-size: 12px;
+  color: #666;
+  line-height: 1.5;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-left: 3px solid #1e5f74;
+  border-radius: 4px;
+  margin-top: 4px;
+}
 
-    .api-config-status.show {
-      display: block;
-    }
+.api-config-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 2px solid #e8e8e8;
+}
 
-    .api-config-status.success {
-      background: rgba(40, 116, 84, 0.1);
-      border: 1px solid var(--ok);
-      color: var(--ok);
-    }
+.api-config-actions .btn {
+  flex: 1;
+  min-height: 42px;
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
 
-    .api-config-status.error {
-      background: rgba(183, 32, 37, 0.1);
-      border: 1px solid var(--accent);
-      color: var(--accent);
-    }
+.api-config-actions .btn:first-child {
+  background: #ffffff;
+  color: #1e5f74;
+  border: 2px solid #1e5f74;
+}
 
-    @media (max-width: 720px) {
-      main { padding: 12px; }
-      .toolbar { align-items: stretch; flex-direction: column; }
-      .toolbar-actions { width: 100%; }
-      .btn { flex: 1 1 auto; }
-      .compact-row, .triplet, .quad, .api-grid { grid-template-columns: 1fr; }
-      .section-head { align-items: flex-start; flex-direction: column; }
-    }
+.api-config-actions .btn:first-child:hover {
+  background: #1e5f74;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(30, 95, 116, 0.3);
+}
 
-    /* 生图API配置模态窗口 */
-    .image-api-modal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      z-index: 9999;
-      background: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(4px);
-      align-items: center;
-      justify-content: center;
-    }
+.api-config-actions .btn:last-child {
+  background: linear-gradient(135deg, #287454 0%, #2a9d6f 100%);
+  color: white;
+  border: none;
+}
 
-    .image-api-modal.show {
-      display: flex;
-    }
+.api-config-actions .btn:last-child:hover {
+  background: linear-gradient(135deg, #2a9d6f 0%, #287454 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(40, 116, 84, 0.4);
+}
 
-    .image-api-content {
-      background: var(--panel);
-      border: 2px solid var(--line);
-      border-radius: var(--radius);
-      padding: 24px;
-      max-width: 600px;
-      width: 90%;
-      max-height: 80vh;
-      overflow-y: auto;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    }
+.api-config-status {
+  margin-top: 16px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  display: none;
+  animation: statusSlideIn 0.3s ease;
+}
 
-    .image-api-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-      padding-bottom: 12px;
-      border-bottom: 2px solid var(--line);
-    }
+@keyframes statusSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
-    .image-api-header h3 {
-      font-size: 18px;
-      color: var(--ink);
-      margin: 0;
-    }
+.api-config-status.show {
+  display: block;
+}
 
-    .image-api-close {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      border: 1px solid var(--line);
-      background: transparent;
-      color: var(--muted);
-      font-size: 20px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0;
-    }
+.api-config-status.success {
+  background: #e8f5e9;
+  border: 2px solid #287454;
+  color: #1b5e3e;
+}
 
-    .image-api-close:hover {
-      background: var(--accent);
-      color: white;
-      border-color: var(--accent);
-    }
+.api-config-status.error {
+  background: #ffebee;
+  border: 2px solid #b72025;
+  color: #8b1519;
+}
 
-    .image-api-form {
-      display: grid;
-      gap: 16px;
-    }
+/* 滚动条美化 */
+.api-config-panel::-webkit-scrollbar {
+  width: 8px;
+}
 
-    .image-api-field {
-      display: grid;
-      gap: 6px;
-    }
+.api-config-panel::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
 
-    .image-api-field label {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--ink);
-    }
+.api-config-panel::-webkit-scrollbar-thumb {
+  background: #c0c0c0;
+  border-radius: 4px;
+}
 
-    .image-api-field input,
-    .image-api-field select {
-      padding: 10px 12px;
+.api-config-panel::-webkit-scrollbar-thumb:hover {
+  background: #a0a0a0;
+}
+
+/* 响应式调整 */
+@media (max-width: 720px) {
+  .api-config-panel {
+    max-width: 95%;
+    padding: 20px;
+  }
+  
+  .api-config-actions {
+    flex-direction: column;
+  }
+}
       border: 1px solid var(--line);
       border-radius: 6px;
       background: var(--field);
@@ -867,17 +901,6 @@
         </div>
         <div class="api-config-form">
           <div class="api-config-field">
-            <label>
-              <input type="checkbox" id="storyboardApiEnabled2" style="width: auto; margin-right: 8px;">
-              启用大模型生成分镜
-            </label>
-            <span class="api-config-hint">启用后将使用 AI 模型生成分镜内容</span>
-          </div>
-          <div class="api-config-field">
-            <label for="storyboardBackendUrl2">后端 API 地址</label>
-            <input type="text" id="storyboardBackendUrl2" placeholder="留空则自动使用当前网站后端">
-          </div>
-          <div class="api-config-field">
             <label for="storyboardApiUrl2">API Base URL</label>
             <input type="text" id="storyboardApiUrl2" placeholder="https://api.openai.com/v1">
           </div>
@@ -907,45 +930,19 @@
           <div class="api-config-field">
             <label for="imageApiUrl2">API 地址（Base URL）</label>
             <input type="text" id="imageApiUrl2" placeholder="例如：https://api.openai.com/v1">
-            <span class="api-config-hint">支持 OpenAI、GPT Image-2、Gemini Imagen 3 等兼容接口</span>
           </div>
           <div class="api-config-field">
             <label for="imageApiKey2">API Key</label>
             <input type="password" id="imageApiKey2" placeholder="sk-...">
           </div>
-          <div class="api-config-field">
-            <label for="imageApiModel2">模型名称</label>
-            <select id="imageApiModel2">
-              <option value="gpt-image-2">GPT Image-2（推荐）</option>
-              <option value="dall-e-3">DALL-E 3</option>
-              <option value="imagen-3">Gemini Imagen 3</option>
-              <option value="custom">自定义模型</option>
-            </select>
-          </div>
+         <div class="api-config-field">
+  <label for="imageApiModel2">模型名称</label>
+  <input type="text" id="imageApiModel2" placeholder="例如：gpt-image-2, dall-e-3, imagen-3">
+  
+</div>
           <div class="api-config-field" id="customModelField2" style="display: none;">
             <label for="imageApiCustomModel2">自定义模型名称</label>
             <input type="text" id="imageApiCustomModel2" placeholder="例如：grok-aurora">
-          </div>
-          <div class="api-config-field">
-            <label for="imageApiSize2">默认尺寸</label>
-            <select id="imageApiSize2">
-              <option value="1024x1792">1024 x 1792（9:16 竖屏）</option>
-              <option value="1792x1024">1792 x 1024（16:9 横屏）</option>
-              <option value="1024x1024">1024 x 1024（1:1 方图）</option>
-              <option value="2048x2048">2048 x 2048（2K 方图）</option>
-              <option value="1536x2048">1536 x 2048（3:4）</option>
-              <option value="2048x1536">2048 x 1536（4:3）</option>
-              <option value="3840x2160">3840 x 2160（4K 横屏）</option>
-              <option value="2160x3840">2160 x 3840（4K 竖屏）</option>
-            </select>
-          </div>
-          <div class="api-config-field">
-            <label for="imageApiQuality2">图片质量</label>
-            <select id="imageApiQuality2">
-              <option value="high">高质量（推荐）</option>
-              <option value="medium">中等质量</option>
-              <option value="low">快速生成</option>
-            </select>
           </div>
         </div>
         <div class="api-config-status" id="imageApiStatus2"></div>
@@ -2205,7 +2202,6 @@ cinematic realism, smooth camera motion, natural motion, sharp face, sharp hands
             model: $("imageApiModel2").value,
             customModel: $("imageApiCustomModel2").value.trim(),
             size: $("imageApiSize2").value,
-            quality: $("imageApiQuality2").value
           };
 
           if (!config.url) {
@@ -2286,7 +2282,7 @@ cinematic realism, smooth camera motion, natural motion, sharp face, sharp hands
           const config = JSON.parse(saved);
           $("imageApiUrl2").value = config.url || "";
           $("imageApiKey2").value = config.key || "";
-          $("imageApiModel2").value = config.model || "gpt-image-2";
+          $("imageApiModel2").value = config.model || "gpt-image-2-4K";
           $("imageApiCustomModel2").value = config.customModel || "";
           $("imageApiSize2").value = config.size || "1024x1792";
           $("imageApiQuality2").value = config.quality || "high";
@@ -2311,43 +2307,52 @@ cinematic realism, smooth camera motion, natural motion, sharp face, sharp hands
       }
     }
 
-    $("generate").addEventListener("click", generateAll);
-    $("extractInfo").addEventListener("click", extractInfo);
-    $("saveApi").addEventListener("click", saveApiConfig);
-    $("testApi").addEventListener("click", testApiConfig);
-    $("reset").addEventListener("click", resetAll);
-    $("loadDemo").addEventListener("click", loadDemo);
+    // 安全绑定事件（检查元素是否存在）
+    const bindEvent = (id, handler) => {
+      const el = $(id);
+      if (el) el.addEventListener("click", handler);
+    };
 
-    // 生成图像按钮
-    $("openImageStudio").addEventListener("click", async () => {
-      const prompt = $("imagePrompt").value;
-      if (!prompt) {
-        alert("请先生成分镜提示词！");
-        return;
-      }
+    bindEvent("generate", generateAll);
+    bindEvent("extractInfo", extractInfo);
+    bindEvent("saveApi", saveApiConfig);
+    bindEvent("testApi", testApiConfig);
+    bindEvent("reset", resetAll);
+    bindEvent("loadDemo", loadDemo);
 
-      // 检查是否配置了 API
-      const apiConfig = getImageApiConfig();
-      if (!apiConfig || !apiConfig.url || !apiConfig.key) {
-        if (confirm("尚未配置生图 API。\n\n点击"确定"打开配置窗口，或点击"取消"复制提示词手动生成。")) {
-          $("imageApiToggle").click();
-        } else {
-          // 复制提示词
-          navigator.clipboard.writeText(prompt).then(() => {
-            alert("✅ 提示词已复制到剪贴板！");
-          }).catch(err => {
-            console.error("复制失败:", err);
-            alert("复制失败，请手动复制提示词");
-          });
+    // 生成图像按钮 - 使用安全绑定
+    const openImageStudioBtn = $("openImageStudio");
+    if (openImageStudioBtn) {
+      openImageStudioBtn.addEventListener("click", async () => {
+        const prompt = $("imagePrompt").value;
+        if (!prompt) {
+          alert("请先生成分镜提示词！");
+          return;
         }
-        return;
-      }
 
-      // 使用配置的 API 生成图像
-      if (confirm("即将使用配置的 API 生成图像。\n\n这将消耗 API 额度，是否继续？")) {
-        await generateImageWithApi(prompt, apiConfig);
-      }
-    });
+        // 检查是否配置了 API
+        const apiConfig = getImageApiConfig();
+        if (!apiConfig || !apiConfig.url || !apiConfig.key) {
+ if (confirm("尚未配置生图 API。\n\n点击「确定」打开配置窗口，或点击「取消」复制提示词手动生成。")) {
+            $("imageApiToggle").click();
+          } else {
+            // 复制提示词
+            navigator.clipboard.writeText(prompt).then(() => {
+              alert("✅ 提示词已复制到剪贴板！");
+            }).catch(err => {
+              console.error("复制失败:", err);
+              alert("复制失败，请手动复制提示词");
+            });
+          }
+          return;
+        }
+
+        // 使用配置的 API 生成图像
+        if (confirm("即将使用配置的 API 生成图像。\n\n这将消耗 API 额度，是否继续？")) {
+          await generateImageWithApi(prompt, apiConfig);
+        }
+      });
+    }
 
     async function generateImageWithApi(prompt, config) {
       const btn = $("openImageStudio");
