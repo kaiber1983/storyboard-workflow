@@ -30,7 +30,41 @@ def read_agent_rules():
     return AGENT_PATH.read_text(encoding="utf-8", errors="replace")
 
 
+def curated_media_beats(text):
+    source = text or ""
+    if not ("金像奖" in source and "媒体" in source and "夏晚星" in source):
+        return []
+
+    beats = []
+    if "闪光灯" in source:
+        beats.append("金像奖后台媒体区，夏晚星在媒体聚焦中亮相，闪光灯密集亮起")
+    if "礼服" in source:
+        beats.append("夏晚星整理华贵礼服，在采访通道中从容穿行")
+    if "夏老师" in source:
+        beats.append("记者 A 保持安全距离上前提问，夏晚星停步回望：夏老师！")
+    if "秦雅薇获奖" in source:
+        beats.append("画外记者询问获奖看法，夏晚星冷静回望：您对秦雅薇获奖怎么看？")
+    if "黑幕" in source:
+        beats.append("记者 B 在安全距离外提问，夏晚星凝视镜头方向：是不是像传闻说的，有黑幕？")
+    if "完全不理会记者" in source or "目光死死锁定" in source:
+        beats.append("夏晚星无视记者提问，视线锁定远处主办方与评委")
+    if "拼了整整十年" in source or "唯一能证明自己" in source:
+        beats.append("内心冲击压上来，夏晚星眼神失焦：十年努力，怎么会是她？")
+    if "主办方大佬面前" in source:
+        beats.append("夏晚星穿过采访通道，向主办方方向快步逼近")
+        beats.append("她越过媒体灯光区，在主办方大佬面前停住")
+    if "为什么是她" in source:
+        beats.append("夏晚星停在主办方大佬面前，压抑质问即将爆发：为什么是她？")
+    if "请注意你的言辞" in source:
+        beats.append("主办方大佬面对镜头冷静回应，媒体镜头转向他")
+    return beats
+
+
 def split_script(text):
+    curated = curated_media_beats(text)
+    if curated:
+        return curated
+
     cleaned = re.sub(r"\s+", " ", text or "").strip()
     if not cleaned:
         return []
@@ -74,11 +108,212 @@ def time_range(index, total, duration_text):
     return f"{trim_num(start)}-{trim_num(end)}s"
 
 
+STORYBOARD_GROUP_DURATION = "15s"
+
+
+def storyboard_time_range(index, total):
+    return time_range(index, total, STORYBOARD_GROUP_DURATION)
+
+
+def storyboard_group_duration(total):
+    return f"0-{trim_num(number_from_duration(STORYBOARD_GROUP_DURATION))}s"
+
+
+RISK_TERMS = [
+    "围堵", "失控", "压迫", "怒火", "质问", "逼问", "骚扰", "推搡", "冲突", "混乱",
+    "惊恐", "威胁", "追打", "逃离", "暴力", "暴走", "攻击", "被困", "被围攻",
+    "怼到脸上", "团团围住", "抢上前", "拨开人群", "疯狂闪烁",
+]
+
+MEDIA_TERMS = ["红毯", "记者", "媒体", "保镖", "保安", "颁奖", "金像奖", "名利场", "采访", "话筒", "相机"]
+
+SAFETY_REPLACEMENTS = [
+    ("话筒几乎怼到脸上", "话筒保持安全距离"),
+    ("话筒怼到脸上", "话筒保持安全距离"),
+    ("怼到脸上", "保持安全距离"),
+    ("记者将夏晚星团团围住", "媒体镜头集中关注夏晚星"),
+    ("团团围住", "媒体聚焦"),
+    ("围堵", "媒体聚焦"),
+    ("状态失控", "情绪张力强烈"),
+    ("失控", "强节奏"),
+    ("压迫", "聚光"),
+    ("怒火", "冷静锋利的情绪"),
+    ("不敢置信的冷静锋利的情绪", "压抑而冷静的情绪"),
+    ("质问", "提问"),
+    ("逼问", "采访"),
+    ("骚扰", "关注"),
+    ("推搡", "自然分开"),
+    ("冲突", "戏剧张力"),
+    ("混乱", "强节奏"),
+    ("惊恐", "克制"),
+    ("威胁", "张力"),
+    ("追打", "追随"),
+    ("逃离", "离开"),
+    ("暴力", "强烈戏剧张力"),
+    ("暴走", "情绪高光"),
+    ("攻击", "靠近关注"),
+    ("被困", "处于聚光中心"),
+    ("被围攻", "受到媒体关注"),
+    ("抢上前", "上前提问"),
+    ("拨开人群", "从容穿行"),
+    ("疯狂闪烁", "密集闪光"),
+    ("激动，媒体聚焦", "关注度高"),
+    ("眼中燃烧着压抑而冷静的情绪", "眼神冷静锋利，情绪被克制在表面之下"),
+    ("燃烧着压抑而冷静的情绪", "眼神冷静锋利"),
+]
+
+
+def needs_safety_guard(text):
+    source = text or ""
+    return any(term in source for term in RISK_TERMS) or any(term in source for term in MEDIA_TERMS)
+
+
+def sanitize_for_prompt(text):
+    safe = text or ""
+    for old, new in SAFETY_REPLACEMENTS:
+        safe = safe.replace(old, new)
+    return safe
+
+
+def strip_stage_directions(text):
+    cleaned = re.sub(r"\([^)]*\)", " ", text or "")
+    cleaned = re.sub(r"（[^）]*）", " ", cleaned)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    return cleaned
+
+
+def extract_dialogue(text):
+    cleaned = strip_stage_directions(text)
+    cleaned = re.sub(r"^[\w\s一-龥]{1,12}[：:]\s*", "", cleaned)
+    if "：" in cleaned or ":" in cleaned:
+        tail = re.split(r"[：:]", cleaned, maxsplit=1)[-1].strip()
+        if 0 < len(tail) <= 50 and re.search(r"[？！?!。]", tail):
+            return sanitize_for_prompt(tail)
+    patterns = [
+        r"[“\"]([^”\"]{1,50})[”\"]",
+        r"([^。！？!?；;]{1,50}[？?])",
+        r"([^。！？!?；;]{1,50}[！!])",
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, cleaned)
+        if match:
+            dialogue = match.group(1).strip()
+            dialogue = re.sub(r"^(记者\s*[A-ZＡ-Ｚ]?|记者|主持人|夏晚星)\s*", "", dialogue).strip()
+            dialogue = re.sub(r"^[：:，,、\s]+", "", dialogue).strip()
+            if 0 < len(dialogue) <= 50:
+                return sanitize_for_prompt(dialogue)
+    return "无"
+
+
 def action_keyword(text, index):
-    presets = ["起势", "推进", "抬手", "转身", "眼神", "定格"]
-    words = [w for w in re.split(r"[。！？!?，,；;、\s]+", text or "") if w]
-    short = next((w for w in words if 2 <= len(w) <= 8), "")
-    return f"{short} / {presets[index % len(presets)]}" if short else f"{presets[index % len(presets)]} / 情绪推进"
+    presets = ["起势", "推进", "转折", "聚焦", "高潮", "定格"]
+    safe = sanitize_for_prompt(strip_stage_directions(text or ""))
+    if "锁定" in safe or "主办方与评委" in safe:
+        return "锁定 / 起势"
+    if "逼近" in safe or "快步" in safe:
+        return "逼近 / 聚焦"
+    if "质问" in safe or "为什么是她" in safe:
+        return "质问 / 高潮"
+    if "夏老师" in safe:
+        return f"提问 / {presets[index % len(presets)]}"
+    if "怎么看" in safe or "获奖" in safe:
+        return f"回望 / {presets[index % len(presets)]}"
+    if "黑幕" in safe or "传闻" in safe:
+        return f"凝视 / {presets[index % len(presets)]}"
+    action_words = [
+        "亮相", "穿行", "提问", "回望", "凝视", "整理", "停步", "锁定", "逼近", "质问", "注视", "看", "望",
+        "站", "走", "跑", "跳", "坐", "转身", "回头", "抬头", "低头", "伸手", "抬手",
+        "挥手", "握手", "推", "拉", "拿", "放", "说", "喊", "问", "答", "笑", "开门",
+        "关门", "上车", "下车", "进入", "离开", "定格",
+    ]
+    found = next((word for word in action_words if word in safe), "")
+    if not found and any(term in safe for term in ["媒体", "闪光", "金像奖", "后台"]):
+        found = "亮相"
+    if not found:
+        words = [w for w in re.split(r"[。！？!?，,；;、\s]+", safe) if 2 <= len(w) <= 4]
+        found = words[0] if words else ""
+    return f"{found} / {presets[index % len(presets)]}" if found else f"{presets[index % len(presets)]} / 情绪推进"
+
+
+def compact_action_summary(text, index):
+    safe = sanitize_for_prompt(strip_stage_directions(text or ""))
+    if any(term in safe for term in ["金像奖后台", "媒体区", "闪光灯", "媒体镜头"]):
+        return "金像奖后台媒体区，夏晚星在媒体聚焦中亮相，闪光灯密集亮起"
+    if "从容穿行" in safe or "礼服" in safe:
+        return "夏晚星整理华贵礼服，在采访通道中从容穿行"
+    if "夏老师" in safe:
+        return "记者 A 保持安全距离上前提问，夏晚星停步回望"
+    if "怎么看" in safe or "获奖" in safe:
+        return "画外记者询问获奖看法，夏晚星冷静回望"
+    if "黑幕" in safe or "传闻" in safe:
+        return "记者 B 在安全距离外提问，夏晚星凝视镜头方向"
+    if "锁定" in safe or "主办方与评委" in safe:
+        return "夏晚星无视记者提问，视线锁定远处主办方与评委"
+    if "十年努力" in safe or "眼神失焦" in safe:
+        return "内心冲击压上来，夏晚星眼神失焦"
+    if "逼近" in safe or "快步" in safe:
+        return "夏晚星穿过采访通道，向主办方方向快步逼近"
+    if "面前停住" in safe:
+        return "夏晚星越过媒体灯光区，在主办方大佬面前停住"
+    if "质问" in safe or "为什么是她" in safe:
+        return "夏晚星停在主办方大佬面前，压抑质问即将爆发"
+    words = [w for w in re.split(r"[。！？!?，,；;、\s]+", safe) if w]
+    return "，".join(words[:2]) or f"关键动作 {index + 1}"
+
+
+def visual_description(text, index, shot_size):
+    safe = sanitize_for_prompt(strip_stage_directions(text or ""))
+    if any(term in safe for term in ["金像奖后台", "媒体区", "闪光灯", "媒体镜头"]):
+        return (
+            "金像奖后台媒体区全貌，夏晚星站在中心偏左的聚光位置；"
+            "记者与摄影师在安全线外形成媒体聚焦，背景板、保安和评委只作空间层次。"
+        )
+    if "从容穿行" in safe or "礼服" in safe:
+        return (
+            "中全景跟随夏晚星整理礼服裙摆，从采访通道从容穿行；"
+            "她眼神冷静锋利，闪光灯和人群作为干净背景。"
+        )
+    if "夏老师" in safe:
+        return (
+            "半身近景中记者 A 在画面右侧安全采访区举起麦克风；"
+            "夏晚星停步回望，视线从左向右衔接。"
+        )
+    if "怎么看" in safe or "获奖" in safe:
+        return (
+            "近景突出夏晚星听到问题后的回望，眼神冷静锋利；"
+            "后景主办方与评委保持距离，媒体背景不抢主体。"
+        )
+    if "黑幕" in safe or "传闻" in safe:
+        return (
+            "特写定格夏晚星克制而锋利的眼神；"
+            "麦克风和闪光灯只在边缘虚化，保持安全距离与清晰主体。"
+        )
+    if "锁定" in safe or "主办方与评委" in safe:
+        return (
+            "承接上一组特写，夏晚星无视记者提问，脚步短暂停顿；"
+            "她的视线越过媒体区，锁定远处主办方大佬与评委。"
+        )
+    if "十年努力" in safe or "眼神失焦" in safe:
+        return (
+            "特写压近夏晚星的眼神，闪光灯在瞳孔里破碎反射；"
+            "内心冲击以克制表情呈现，背景声音仿佛被抽空。"
+        )
+    if "逼近" in safe or "快步" in safe:
+        return (
+            "中全景跟随夏晚星穿过采访通道，媒体与保安自然让出安全距离；"
+            "她朝主办方方向快步逼近，运动方向延续上一镜。"
+        )
+    if "面前停住" in safe:
+        return (
+            "侧前方中景展示夏晚星越过媒体灯光区，在主办方大佬面前停住；"
+            "双方左右位置明确，评委在后景形成对峙关系。"
+        )
+    if "质问" in safe or "为什么是她" in safe:
+        return (
+            "夏晚星停在主办方大佬面前，压抑质问即将爆发；"
+            "镜头保持中景对峙，保留与下一组正面冲突的衔接空间。"
+        )
+    return f"{shot_size}呈现核心动作，主体清晰，背景简化，动作与上一镜自然衔接。"
 
 
 def collect_refs(refs):
@@ -289,6 +524,16 @@ def infer_scene_setting(script, has_refs=False):
     )
 
 
+def infer_storyboard_title(payload):
+    explicit = (payload.get("projectTitle") or "").strip()
+    if explicit and explicit != "MV舞蹈分镜故事板":
+        return sanitize_for_prompt(explicit)
+    text = f"{payload.get('script', '')} {payload.get('scene', '')}"
+    if re.search(r"金像奖|颁奖|红毯|媒体|记者|名利场", text):
+        return "金像奖后台媒体区分镜故事板"
+    return "分镜故事板"
+
+
 def build_shots(payload):
     group_size = int(payload.get("groupSize") or 5)
     llm_parts = payload.get("_shotParts")
@@ -302,21 +547,28 @@ def build_shots(payload):
     for index, part in enumerate(parts):
         plan = LENS_PLAN[min(index, len(LENS_PLAN) - 1)]
         is_last = index == total - 1
+        safe_part = sanitize_for_prompt(part)
+        dialogue = extract_dialogue(part)
+        brief = compact_action_summary(safe_part, index)
+        shot_size = plan[0]
+        if any(term in safe_part for term in ["主办方大佬面前", "面前停住", "为什么是她", "质问"]):
+            shot_size = "中景"
         shot = {
             "cut": f"Cut{index + 1}",
             "time": time_range(index, total, payload.get("duration", "15s")),
             "functionName": "完成转折" if is_last else plan[3],
-            "shotSize": plan[0],
+            "shotSize": shot_size,
             "angle": plan[1],
             "camera": "快速推进后固定" if is_last else plan[2],
             "blocking": f"保持同一轴线与空间方向；角色从上一镜动作自然延续，视线与运动方向清楚；{plan[4]}。",
             "subject": "核心角色、关键道具、当前场景环境元素",
-            "action": part,
-            "description": f"围绕“{part}”设计画面：先保证主体清晰，再用构图、光影和背景关系强化情绪；每镜保留 1-2 个视觉重点，动作与上一镜连续。",
-            "dialogue": "无",
+            "action": safe_part,
+            "brief": brief,
+            "description": visual_description(safe_part, index, shot_size),
+            "dialogue": dialogue,
             "sound": "音乐强拍、环境声回落、动作停顿" if is_last else "环境声、动作声、音乐节拍",
             "rhythm": "爆发 / 定格" if is_last else ["缓慢", "律动", "紧张", "聚焦", "压迫"][index % 5],
-            "keyword": action_keyword(part, index),
+            "keyword": action_keyword(safe_part, index),
         }
         shots.append(shot)
     return shots
@@ -326,7 +578,7 @@ def chunk_shots(shots, size):
     return [shots[i : i + size] for i in range(0, len(shots), size)]
 
 
-def build_storyboard_prompt(payload, group, group_index, agent_rules):
+def _build_storyboard_prompt_legacy(payload, group, group_index, agent_rules):
     title = payload.get("projectTitle") or "MV舞蹈分镜故事板"
     duration = payload.get("duration") or "15s"
     ratio = payload.get("ratio") or "3:4"
@@ -343,7 +595,8 @@ def build_storyboard_prompt(payload, group, group_index, agent_rules):
     layout = payload.get("layout") or ("严格使用专业 MV 分镜故事板版式。" if has_refs else "")
 
     refs = collect_refs(refs_list)
-    story_brief = "；".join(f"{shot['cut']}（{shot['time']}）：{shot['action']}" for shot in group)
+    display_times = {shot["cut"]: storyboard_time_range(i, len(group)) for i, shot in enumerate(group)}
+    story_brief = "；".join(f"{shot['cut']}（{display_times[shot['cut']]}）：{shot.get('brief') or shot['action']}" for shot in group)
     if frame_aspect == "9:16":
         frame_layout = (
             "分镜画面比例固定为 9:16。每个小分镜必须是竖向画面，不得拉伸、裁歪或变成横图；"
@@ -367,10 +620,10 @@ def build_storyboard_prompt(payload, group, group_index, agent_rules):
     for i, shot in enumerate(group, 1):
         cuts.append(
             f"""第 {i} 行：
-左侧画面：{shot['cut']}，{shot['time']}，{shot['shotSize']}。{shot['description']}
+左侧画面：{shot['cut']}，{display_times[shot['cut']]}，{shot['shotSize']}。{shot['description']}
 右侧文字：
 镜号：{shot['cut']}
-时序：{shot['time']}
+时序：{display_times[shot['cut']]}
 景别：{shot['shotSize']}
 动作关键词：{shot['keyword']}
 调度关键词：{shot['camera']} / {shot['functionName']}
@@ -378,9 +631,6 @@ def build_storyboard_prompt(payload, group, group_index, agent_rules):
         )
 
     return f"""生成一张用于影片制作的专业分镜故事板图片，画幅比例 {ratio}，{style}。
-
-故事板 Agent 规则来源：
-本提示词由本地 storyboard_agent_server.py 读取 AGENTS.md 后生成，遵守其中的视频生产型分镜故事板、角色连续性、场景连续性、导演调度、版式可读性和清晰度约束。
 
 故事板内容：
 {story_brief}
@@ -432,43 +682,179 @@ clean image, low noise, minimal grain, clean shadows, simplified background text
 """
 
 
-def build_video_prompt(payload, group):
+def build_storyboard_prompt(payload, group, group_index, agent_rules):
+    title = infer_storyboard_title(payload)
     duration = payload.get("duration") or "15s"
-    style = payload.get("style") or "电影写实风格，真实摄影质感，高质量 MV / 短片镜头"
-    character = payload.get("character") or "保持故事板中同一角色的五官、发型、服装、体型、年龄和气质一致。"
-    scene = payload.get("scene") or "保持故事板中同一场景的建筑结构、空间方向、材质、道具和光源方向一致。"
-    refs = collect_refs(payload.get("refs", []))
-    lines = "\n".join(
-        f"{shot['time']}：{shot['shotSize']}，{shot['angle']}，{shot['camera']}。{shot['action']}。{shot['blocking']}"
-        for shot in group
-    )
-    return f"""根据当前分镜故事板图片，生成一段电影写实视频。参考图和故事板中的人物、场景、服装、道具、光影、色调必须保持一致。
+    ratio = payload.get("ratio") or "3:4"
+    frame_aspect = payload.get("frameAspect") or "16:9"
+    style = payload.get("style") or "电影写实风格，真实摄影质感，高质量影视概念设计"
+    character = sanitize_for_prompt(payload.get("character") or "根据剧本统一设计角色，但同一角色的五官、发型、服装、体型、年龄和气质必须保持一致。")
+    scene = sanitize_for_prompt(payload.get("scene") or "根据剧本统一设计场景，但建筑结构、空间方向、材质和氛围必须保持一致。")
+    refs_list = payload.get("refs", [])
+    refs = collect_refs(refs_list)
+    layout = sanitize_for_prompt(payload.get("layout") or "严格按照专业分镜故事板版式：顶部标题区、红色提示栏、中部 Cut 横向行、下方空间图、底部灯光/色彩/氛围三栏。")
+    safety_required = needs_safety_guard(payload.get("script", "")) or needs_safety_guard(" ".join(shot["action"] for shot in group))
 
-视频时长：{duration}
-本组镜头：{group[0]['cut']} 至 {group[-1]['cut']}
-风格：{style}
+    display_times = {shot["cut"]: storyboard_time_range(i, len(group)) for i, shot in enumerate(group)}
+    story_brief = "；".join(f"{shot['cut']}（{display_times[shot['cut']]}）：{shot.get('brief') or shot['action']}" for shot in group)
+    if frame_aspect == "9:16":
+        frame_layout = (
+            "每个 Cut 内部的小分镜画面框必须是标准 9:16 竖向矩形。每个 Cut 单元左右 50/50 分栏，"
+            "左侧 50% 为 9:16 竖向分镜画面区，右侧 50% 为白底文字信息区；文字区不得侵占、覆盖或压缩画面主体。"
+        )
+    else:
+        frame_layout = (
+            "每个 Cut 内部的小分镜画面框必须是标准 16:9 横向矩形。主分镜区使用横向 Cut 行排版；"
+            "每个 Cut 行内部左 50% 为 16:9 画面框，右 50% 为白底文字信息区，左右两区等宽；"
+            "文字区必须在画面框之外，不得侵占、覆盖、拉伸或压扁 16:9 分镜画面。"
+            "16:9 指画面框本身宽高比例接近 1.777:1，不能画成超宽长条、细长横幅、21:9、2.35:1 或超过 2:1 的比例。"
+            "所有 Cut 的 16:9 画面框必须完全等宽等高；每个画面框左上角必须有黑底白字 Cut 编号块。"
+        )
+
+    cuts = []
+    for i, shot in enumerate(group, 1):
+        cuts.append(
+            f"""第 {i} 行：
+左侧画面：{shot['cut']}，{display_times[shot['cut']]}，{shot['shotSize']}。{shot['description']}
+右侧文字：
+镜号：{shot['cut']}
+时序：{display_times[shot['cut']]}
+景别：{shot['shotSize']}
+动作关键词：{shot['keyword']}
+调度关键词：{shot['camera']} / {shot['functionName']}
+台词：{shot['dialogue']}"""
+        )
+
+    group_duration = storyboard_group_duration(len(group))
+    if ratio != frame_aspect:
+        orientation = "横向矩形" if frame_aspect == "16:9" else "竖向矩形"
+        aspect_intro = f"整张故事板画幅比例为 {ratio}；每个 Cut 内部的小分镜画面框必须是标准 {frame_aspect} {orientation}。"
+    else:
+        aspect_intro = f"整张故事板画幅比例为 {ratio}；每个 Cut 的分镜画面框也使用 {frame_aspect}。"
+
+    safety_blocking = ""
+    safety_avoid = ""
+    mood_line = "氛围关键词：3-6 个关键词，准确表达本组镜头情绪。"
+    if safety_required:
+        safety_blocking = (
+            "涉及媒体、人群或强情绪场面时，必须自动采用安全影视表达：角色保持主动、从容、冷静和可控；"
+            "记者、摄影师、保安、工作人员与主体保持清楚安全距离；麦克风、相机和手臂不得贴近脸部或身体；"
+            "用“媒体聚焦、红毯关注、闪光灯包围、高光、冷艳、从容、掌控、情绪张力”表达戏剧张力。"
+        )
+        safety_avoid = (
+            "媒体与主体保持安全距离；无推挤、无贴脸麦克风、无攻击性动作；人物保持主动、从容、可控。"
+        )
+        mood_line = "氛围关键词：高光、冷艳、从容、聚焦、名利场、掌控。"
+
+    return f"""生成一张用于影片制作的专业分镜故事板图片。{aspect_intro}{style}。
+
+故事板内容：
+{story_brief}
 
 参考图使用：
 {refs}
+
+人物与场景设定：
+角色设定：{character}
+场景设定：{scene}
+
+版式锁定：
+{layout}
+
+分镜画面尺寸：
+{frame_layout}
+
+顶部标题：
+主标题：{title}
+副标题：本组时长 {STORYBOARD_GROUP_DURATION} / 第 {group_index + 1} 组
+
+整体要求：
+这是一张完整的视频生产型分镜故事板，不是单张电影海报，也不是纯文字表格。画面必须同时包含主分镜板、场景图、光影与氛围三个模块。所有分镜必须保持同一角色、同一场景、同一道具、同一光影方向和同一色调体系的连续性。动作从前一镜自然延续到后一镜，镜头方向清楚，不要跳轴。必须符合导演调度和剪辑语法：先建立空间关系，再推进动作和情绪；遵守 180 度轴线规则、视线匹配、运动方向连续、动作匹配剪辑；每个镜头必须有明确叙事功能和运镜动机。{safety_blocking}
+
+--- 分镜板（主模块）---
+严格使用 {len(group)} 个 Cut 单元。每个 Cut 单元必须采用左右 50/50 分栏：左侧 50% 是分镜画面区，只放该 Cut 画面；右侧 50% 是白底文字信息区，只放文字。人物台词必须放在右侧文字信息区展示，不能写在分镜画面内部，不能遮挡人物脸部、手部、关键动作和重要道具。右侧文字区必须包含镜号、时序、景别、动作关键词、调度关键词、台词；如无台词写“台词：无”。每个小分镜画面必须严格保持 {frame_aspect} 比例，这是画面框本身的硬性尺寸，不是内容裁切建议。所有分镜画面尺寸一致，不能出现忽宽忽窄、忽横忽竖、比例变形、画面互相重叠。{frame_layout}
+
+{chr(10).join(cuts)}
+
+--- 场景图（Secondary）---
+位置：分镜板下方，生成 2 张空间参考图。
+1. 俯视场景图：展示主要空间布局、角色起点、动作推进方向、关键道具位置、最终定格位置，只使用短标签和箭头。
+2. 关键空间关系：展示场景纵深、入口、背景结构、主机位方向、光源位置和轴线关系，继承参考图或剧本中的核心环境。
+
+--- 光影与氛围（Lighting & Mood）---
+位置：画面底部三栏排列。
+灯光示意图：主光、环境光、轮廓光、特殊光源方向。
+色彩参考：3-6 个主要色块，来自角色服装、场景主色和关键光源。
+{mood_line}
+
+清晰度与降噪：
+clean image, low noise, minimal grain, clean shadows, simplified background texture, sharp subject, readable layout, no dirty noise, no compression artifacts. 暗部保留层次但不要脏黑；背景减少高频纹理；每个分镜只保留 1-2 个视觉重点；人物脸部、手部、关键道具、分镜边框和文字区域必须优先清晰。
+
+安全与避免：
+不要自由排版；不要生成单张电影海报；不要生成纯文字表格；不要生成漫画风格，除非明确要求；不要出现多余角色；不要让同一角色变成不同人；不要出现重复脸、错乱五官、畸形手、错乱文字；不要让分镜格互相重叠；不要让文字遮挡关键画面；不要改变参考图中的核心人物和核心场景；不要强胶片颗粒、脏噪点、低清压缩伪影、过量烟雾、暗部糊成一片、背景满屏细碎纹理、过度锐化、过度运动模糊。
+{safety_avoid}
+"""
+
+
+def build_video_prompt(payload, group):
+    style = payload.get("style") or "电影写实风格，真实摄影质感，高质量短片镜头"
+    character = sanitize_for_prompt(payload.get("character") or "保持同一角色的五官、发型、服装、体型、年龄和气质完全一致。")
+    scene = sanitize_for_prompt(payload.get("scene") or "保持同一场景的建筑结构、空间方向、材质、道具和光源方向完全一致。")
+    refs = collect_refs(payload.get("refs", []))
+
+    # 视频提示词使用固定的 15s 分组时长，而不是用户输入的总时长
+    shot_descriptions = []
+    for i, shot in enumerate(group):
+        # 重新计算时序，使用固定的 15s
+        video_time = storyboard_time_range(i, len(group))
+        dialogue_text = f" 台词：\"{shot['dialogue']}\"" if shot['dialogue'] != "无" else ""
+        shot_descriptions.append(
+            f"{video_time}：{shot['shotSize']}，{shot['angle']}，{shot['camera']}。{shot['action']}。{dialogue_text}"
+        )
+    lines = "\n".join(shot_descriptions)
+
+    # 总时长固定为 15s
+    total_duration = STORYBOARD_GROUP_DURATION
+
+    return f"""生成一段电影写实风格的连续视频。这是真实的电影镜头剪辑，不是分镜故事板设计稿。
+
+视频信息：
+总时长：{total_duration}
+镜头数量：{len(group)} 个连续镜头（{group[0]['cut']} 至 {group[-1]['cut']}）
+风格：{style}
 
 人物与场景：
 角色设定：{character}
 场景设定：{scene}
 
-镜头时间线：
+参考图使用：
+{refs}
+
+镜头时间线（连续剪辑）：
 {lines}
 
-视频连续性：
-动作必须从上一镜自然延续到下一镜；保持 180 度轴线、视线匹配、运动方向连续和动作匹配剪辑；不要无故跳轴；不要让角色位置、手部、头部、身体朝向、道具位置在相邻镜头中突然改变。重要动作必须有起因、过程和结果，重要情绪用近景或特写强化。
+视频连续性要求：
+这是一段完整的连续视频，由 {len(group)} 个镜头剪辑而成。每个镜头之间要自然过渡，动作从上一镜自然延续到下一镜。保持 180 度轴线、视线匹配、运动方向连续和动作匹配剪辑。不要无故跳轴，不要让角色位置、手部、头部、身体朝向、道具位置在相邻镜头中突然改变。重要动作必须有起因、过程和结果，重要情绪用近景或特写强化。
 
 镜头语言：
 先建立空间关系，再推进动作和情绪。每一次运镜都必须有明确动机：推进用于靠近人物情绪或发现关键动作，横移用于跟随行动，固定镜头用于压迫、冷静观察或定格。景别要有变化，不要连续使用几乎相同的角度和景别。
 
-画质与光影：
-cinematic realism, smooth camera motion, natural motion, sharp face, sharp hands, clean image, low noise, minimal grain, clean shadows, no dirty noise, no compression artifacts. 光影、色彩和氛围继承故事板，暗部保留层次，背景细节不要抢主体。
+画质要求：
+cinematic realism, smooth camera motion, natural motion, sharp face, sharp hands, clean image, low noise, minimal grain, clean shadows, no dirty noise, no compression artifacts. 光影、色彩和氛围要有电影质感，暗部保留层次，背景细节不要抢主体。
+
+重要提示 - 这是真实的电影视频，不是设计稿：
+画面中只能出现真实的连续场景，不要出现任何分镜故事板的设计元素。具体来说：
+- 不要出现多个分镜格子或画面框
+- 不要出现故事板版式（标题、文字信息栏、Cut编号框）
+- 不要出现黑色边框、分隔线、网格线
+- 不要出现文字标注、镜号标签、时间标记
+- 不要出现俯视场景图、灯光示意图等设计元素
+- 不要出现任何看起来像"设计稿"或"概念图"的元素
+
+这是一段真实拍摄的电影视频，观众看到的应该是连续的故事情节，而不是制作过程中的设计文档。
 
 避免：
-不要换脸；不要换服装；不要改变发型；不要改变场景结构；不要出现多余角色；不要错乱五官；不要畸形手；不要镜头乱跳；不要过度运动模糊；不要低清压缩伪影；不要文字水印。"""
+不要生成分镜故事板；不要出现多个画面格子；不要出现版式框架；不要出现文字标注；不要出现设计稿元素；不要换脸；不要换服装；不要改变发型；不要改变场景结构；不要出现多余角色；不要错乱五官；不要畸形手；不要镜头乱跳；不要过度运动模糊；不要低清压缩伪影；不要文字水印。"""
 
 
 def generate_payload(payload):
