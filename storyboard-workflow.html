@@ -887,6 +887,7 @@
         <div class="toolbar-actions">
           <button class="btn secondary" id="storyboardApiToggle" type="button">⚙️ 分镜API配置</button>
           <button class="btn secondary" id="imageApiToggle" type="button">🎨 生图API配置</button>
+          <button class="btn secondary" id="runningHubToggle" type="button">🚀 RunningHub配置</button>
           <button class="btn secondary" id="loadDemo" type="button">填入示例</button>
           <button class="btn warn" id="generate" type="button">生成分镜与提示词</button>
           <button class="btn secondary" id="reset" type="button">清空</button>
@@ -938,7 +939,7 @@
          <div class="api-config-field">
   <label for="imageApiModel2">模型名称</label>
   <input type="text" id="imageApiModel2" placeholder="例如：gpt-image-2, dall-e-3, imagen-3">
-  
+
 </div>
           <div class="api-config-field" id="customModelField2" style="display: none;">
             <label for="imageApiCustomModel2">自定义模型名称</label>
@@ -951,7 +952,40 @@
           <button class="btn" id="imageApiSave2" type="button" style="background: var(--ok); color: white; border: none;">保存配置</button>
         </div>
       </div>
-
+      <!-- RunningHub 配置面板 -->
+<div class="api-config-panel" id="runningHubPanel">
+  <div class="api-config-header">
+    <h3>🚀 RunningHub API 配置</h3>
+    <span class="api-config-close" id="runningHubPanelClose">×</span>
+  </div>
+  <div class="api-config-form">
+    <div class="api-config-field">
+      <label for="runningHubApiKey">API Key</label>
+      <input type="password" id="runningHubApiKey" placeholder="sk-...">
+      <span class="api-config-hint">从 RunningHub 控制台（https://www.runninghub.ai）获取你的 API Key</span>
+    </div>
+    <div class="api-config-field">
+      <label for="runningHubModelType">生图模型</label>
+      <select id="runningHubModelType">
+        <option value="text-to-image">全能图片G-2-文生图官方稳定版</option>
+        <option value="image-to-image">全能图片G-2-图生图官方稳定版</option>
+      </select>
+      <span class="api-config-hint">二选一：文生图直接使用提示词；图生图需要在生图区域填写参考图 URL。</span>
+    </div>
+    <div class="api-config-field">
+      <label>
+        <input type="checkbox" id="runningHubEnabled" style="width: auto; margin-right: 8px;">
+        启用 RunningHub 生图（优先使用）
+      </label>
+      <span class="api-config-hint">启用后，生图功能将优先使用 RunningHub API</span>
+    </div>
+  </div>
+  <div class="api-config-status" id="runningHubStatus"></div>
+  <div class="api-config-actions">
+    <button class="btn" id="runningHubTest" type="button">测试连接</button>
+    <button class="btn" id="runningHubSave" type="button" style="background: linear-gradient(135deg, #287454 0%, #2a9d6f 100%); color: white; border: none;">保存配置</button>
+  </div>
+</div>
       <section class="api-panel" style="display: none;">
         <!-- 原有的 API 配置面板，保留但隐藏 -->
         <div class="section-head">
@@ -1039,11 +1073,11 @@
             <div class="compact-row">
               <label>
                 项目标题
-                <input id="projectTitle" value="MV舞蹈分镜故事板" />
+                <input id="projectTitle" value="" placeholder="请输入项目标题"/>
               </label>
               <label>
                 风格
-                <input id="styleInput" value="电影写实风格，真实摄影质感，高质量影视概念设计" />
+                <input id="styleInput" value="" placeholder="电影写实风格，真实摄影质感，高质量影视概念设计" />
               </label>
             </div>
 
@@ -1066,7 +1100,7 @@
 
             <label>
               版式锁定要求
-              <textarea id="layoutInput">严格按照“版式1.png”的专业 MV 舞蹈分镜故事板版式：顶部左侧大标题，右上角总时长/组号；标题下方一条红色版式提示栏；中部为 5 条横向 Cut 行，每个 Cut 单元必须左右 50/50 分栏，左侧 50% 是精准 16:9 分镜画面框，右侧 50% 是白底文字信息区；人物台词必须放在右侧文字区，不得写进画面里；每个分镜框左上角黑底白字 Cut 编号；下方并排“俯视场景图”和“关键空间关系”；最底部三栏“灯光示意图”“色彩参考”“氛围关键词”。白色或米白纸面背景，细黑线分隔，网格整齐，文字清晰。</textarea>
+              <textarea id="layoutInput">严格按照"专业分镜故事板版式"：顶部左侧大标题，右上角总时长/组号；标题下方一条红色版式提示栏；中部为 5 条横向 Cut 行，每个 Cut 单元必须左右 50/50 分栏，左侧 50% 是精准 16:9 分镜画面框，右侧 50% 是白底文字信息区；人物台词必须放在右侧文字区，不得写进画面里；每个分镜框左上角黑底白字 Cut 编号；下方并排“俯视场景图”和“关键空间关系”；最底部三栏“灯光示意图”“色彩参考”“氛围关键词”。白色或米白纸面背景，细黑线分隔，网格整齐，文字清晰。</textarea>
             </label>
 
             <div class="file-grid" id="fileGrid">
@@ -1140,19 +1174,40 @@
         </section>
       </div>
 
-      <section>
+     <section>
         <div class="section-head">
           <h3>分组提示词</h3>
           <small>每组 4-6 个分镜</small>
         </div>
         <div class="body">
           <div class="group-tabs" id="groupTabs"></div>
+
+          <!-- RunningHub 生图参数 + 生图按钮 -->
+          <div id="runningHubImageParams" style="display: none; margin-bottom: 16px; padding: 16px; background: linear-gradient(135deg, #f8f9fa 0%, #e8f5e9 100%); border: 2px solid #287454; border-radius: 8px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 16px;">🚀</span>
+                <strong style="color: #287454; font-size: 14px;">RunningHub 生图</strong>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <input id="runningHubImageUrl" type="url" placeholder="图生图参考图 URL" style="display: none; width: 230px; min-height: 32px; padding: 6px 10px; border: 2px solid #e0e0e0; border-radius: 6px; background: white; font-size: 12px;">
+                <span id="runningHubTaskInfo" style="color: #287454; font-size: 12px;">全能图片G-2官方稳定版</span>
+                <button class="btn" id="generateWithRunningHub" type="button" style="background: linear-gradient(135deg, #287454, #2a9d6f); border: none; min-height: 32px; font-size: 13px;">🚀 RunningHub 生图</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 第三方API生图按钮 -->
+          <div style="display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-bottom: 12px;">
+            <button class="btn" id="openImageStudio" type="button" style="background: linear-gradient(135deg, #6366f1, #7c8aff); border: none; min-height: 32px; font-size: 13px;">🎨 第三方API生图</button>
+          </div>
+
+          <!-- 提示词区域 -->
           <div class="output-grid">
             <div class="output-box">
               <div class="copy-row">
                 <strong>分镜图片提示词</strong>
                 <button class="btn secondary" data-copy="imagePrompt" type="button">复制</button>
-                <button class="btn" id="openImageStudio" type="button" style="background: linear-gradient(135deg, #6366f1, #7c8aff); border: none;">🎨 生成图像</button>
               </div>
               <textarea id="imagePrompt" readonly placeholder="生成后显示"></textarea>
               <div class="status" id="imageCopyStatus"></div>
@@ -1165,13 +1220,37 @@
               <textarea id="videoPrompt" readonly placeholder="生成后显示"></textarea>
               <div class="status" id="videoCopyStatus"></div>
             </div>
-          </div>
+        <!-- 图像输出窗口 -->
+          <div id="imageOutputArea" style="display: none; margin-top: 16px; padding: 20px; background: #1a1a1a; border: 2px solid #333; border-radius: 8px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 16px;">🖼️</span>
+                <strong style="color: #fff; font-size: 14px;">生成结果</strong>
+                <span id="imageOutputInfo" style="color: #888; font-size: 12px;"></span>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn" id="downloadImage" type="button" style="background: linear-gradient(135deg, #287454, #2a9d6f); border: none; min-height: 32px; font-size: 13px; color: white;">⬇️ 下载图片</button>
+                <button class="btn secondary" id="closeImageOutput" type="button" style="min-height: 32px; font-size: 13px;">关闭</button>
+              </div>
+            </div>
+            <div id="imageOutputContainer" style="display: flex; justify-content: center; align-items: center; min-height: 300px; background: #111; border-radius: 6px; overflow: hidden;">
+              <span style="color: #555;">等待生成...</span>
+            </div>
+          </div>  
         </div>
       </section>
     </main>
   </div>
 
   <script>
+    if (window.location.protocol === "file:") {
+      const serverUrl = "http://127.0.0.1:8787/storyboard-workflow.html";
+      console.warn("请通过本地 HTTP 后端打开页面，不要直接用 file:// 打开：", serverUrl);
+      setTimeout(() => {
+        alert("当前是 file:// 本地文件方式打开，浏览器会拦截部分页面/接口能力。\n\n请改用：\n" + serverUrl);
+      }, 300);
+    }
+
     const $ = (id) => document.getElementById(id);
     const state = { shots: [], groups: [], activeGroup: 0, refs: [] };
     const API_STORAGE_KEY = "storyboardApiConfig";
@@ -1227,10 +1306,34 @@
     }
 
     function actionKeyword(text, index) {
-      const presets = ["起势", "推进", "抬手", "转身", "眼神", "定格"];
-      const words = text.replace(/[。！？!?，,；;、]/g, " ").split(/\s+/).filter(Boolean);
-      const short = words.find(w => w.length >= 2 && w.length <= 8);
-      return short ? `${short} / ${presets[index % presets.length]}` : `${presets[index % presets.length]} / 情绪推进`;
+      const presets = ["起势", "推进", "转折", "聚焦", "高潮", "定格"];
+      const actionWords = ["站", "走", "跑", "跳", "坐", "躺", "蹲", "转身", "回头", "抬头", "低头", "伸手", "抬手", "挥手", "握手", "推", "拉", "抓", "拿", "放", "看", "望", "盯", "瞥", "凝视", "注视", "说", "喊", "叫", "问", "答", "笑", "哭", "怒", "拥抱", "亲吻", "打", "踢", "躲", "闪", "开门", "关门", "上车", "下车", "进入", "离开", "拨开", "围住", "追", "逃", "停", "定格"];
+      let foundAction = null;
+      for (const word of actionWords) {
+        if (text.includes(word)) {
+          foundAction = word;
+          break;
+        }
+      }
+      if (!foundAction) {
+        const words = text.replace(/[。！？!?，,；;、\(\)（）]/g, " ").split(/\s+/).filter(Boolean);
+        foundAction = words.find(w => w.length >= 2 && w.length <= 4);
+      }
+      return foundAction ? `${foundAction} / ${presets[index % presets.length]}` : `${presets[index % presets.length]} / 情绪推进`;
+    }
+
+    function extractDialogue(text) {
+      const patterns = [/[：:][""]([^""]+)[""]/, /[""]([^""]+)[""]/, /([^。！？!?]+[？?])/, /([^。！？!?]+[！!])/];
+      for (const pattern of patterns) {
+        const match = text.match(pattern);
+        if (match && match[1]) {
+          const dialogue = match[1].trim();
+          if (dialogue.length > 0 && dialogue.length <= 50) {
+            return dialogue;
+          }
+        }
+      }
+      return "无";
     }
 
     function buildShots() {
@@ -1254,7 +1357,7 @@
           subject: "核心角色、关键道具、当前场景环境元素",
           action: part,
           description: `围绕“${part}”设计画面：先保证主体清晰，再用构图、光影和背景关系强化情绪；每镜保留 1-2 个视觉重点，动作与上一镜连续。`,
-          dialogue: "无",
+          dialogue: extractDialogue(part),
           sound: isLast ? "音乐强拍、环境声回落、动作停顿" : "环境声、动作声、音乐节拍",
           rhythm: isLast ? "爆发 / 定格" : ["缓慢", "律动", "紧张", "聚焦", "压迫"][index % 5],
           keyword: actionKeyword(part, index)
@@ -1385,7 +1488,59 @@
       }
     }
 
-    function loadApiConfig() {
+   function loadRunningHubConfig() {
+  const saved = localStorage.getItem("runningHubConfig");
+  if (saved) {
+    try {
+      const config = JSON.parse(saved);
+      const apiKeyInput = $("runningHubApiKey");
+      const modelTypeInput = $("runningHubModelType");
+      const enabledCheckbox = $("runningHubEnabled");
+      
+      if (apiKeyInput) apiKeyInput.value = config.apiKey || "";
+      if (modelTypeInput) modelTypeInput.value = config.modelType || "text-to-image";
+      if (enabledCheckbox) enabledCheckbox.checked = config.enabled || false;
+      
+      // 根据启用状态显示/隐藏参数区域和按钮
+      toggleRunningHubUI(config.enabled);
+      updateRunningHubModeUI(config.modelType || "text-to-image");
+    } catch (e) {
+      console.error("加载 RunningHub 配置失败:", e);
+    }
+  }
+}
+
+function toggleRunningHubUI(enabled) {
+  const paramsDiv = $("runningHubImageParams");
+  const runningHubBtn = $("generateWithRunningHub");
+  const thirdPartyBtn = $("openImageStudio");
+  
+  if (enabled) {
+    // 启用 RunningHub
+    if (paramsDiv) paramsDiv.style.display = "block";
+    if (runningHubBtn) runningHubBtn.style.display = "inline-block";
+    if (thirdPartyBtn) thirdPartyBtn.textContent = "🎨 第三方API生图（备用）";
+  } else {
+    // 禁用 RunningHub
+    if (paramsDiv) paramsDiv.style.display = "none";
+    if (runningHubBtn) runningHubBtn.style.display = "none";
+    if (thirdPartyBtn) thirdPartyBtn.textContent = "🎨 第三方API生图";
+  }
+}
+
+function updateRunningHubModeUI(modelType) {
+  const imageUrlInput = $("runningHubImageUrl");
+  const taskInfo = $("runningHubTaskInfo");
+  const isImageToImage = modelType === "image-to-image";
+
+  if (imageUrlInput) imageUrlInput.style.display = isImageToImage ? "block" : "none";
+  if (taskInfo) {
+    taskInfo.textContent = isImageToImage
+      ? "全能图片G-2-图生图官方稳定版"
+      : "全能图片G-2-文生图官方稳定版";
+  }
+}
+function loadApiConfig() {
       try {
         const raw = localStorage.getItem(API_STORAGE_KEY);
         if (!raw) {
@@ -1457,14 +1612,19 @@
     }
 
     function buildStoryboardPrompt(group) {
-      const title = $("projectTitle").value.trim() || "MV舞蹈分镜故事板";
+      const title = $("projectTitle").value.trim() || "分镜故事板";
       const subtitle = `总时长 ${$("duration").value.trim() || "15s"} / 第 ${state.activeGroup + 1} 组`;
       const frameAspect = $("frameAspect").value || "16:9";
+
+      // 根据画幅比例生成版式说明
       const frameLayout = frameAspect === "9:16"
-        ? "分镜画面比例固定为 9:16。每个 Cut 单元必须左右 50/50 分栏，左侧 50% 为 9:16 竖向分镜画面区，右侧 50% 为白底文字信息区；人物台词必须放在右侧文字区，不得写进画面里。"
-        : "16:9 版式必须参考“版式1.png”的布局：顶部左侧大标题，右上角总时长/组号，标题下方红色版式提示栏，中部 5 条横向 Cut 行；每个 Cut 单元必须左右 50/50 分栏，左侧 50% 为精准 16:9 分镜画面框，右侧 50% 为白底文字信息区；下方两栏空间图，底部三栏灯光/色彩/氛围。人物台词必须放在右侧文字区，不得写进画面里。";
+        ? "分镜画面比例固定为 9:16 竖向。每个 Cut 单元左右 50/50 分栏，左侧 50% 为 9:16 竖向分镜画面区，右侧 50% 为白底文字信息区。"
+        : "分镜画面比例固定为 16:9 横向。每个 Cut 单元左右 50/50 分栏，左侧 50% 为 16:9 横向分镜画面区，右侧 50% 为白底文字信息区。";
+
       const storyBrief = group.map(shot => `${shot.cut}（${shot.time}）：${shot.action}`).join("；");
+
       const cuts = group.map((shot, i) => {
+        const dialogueText = shot.dialogue !== "无" ? `台词：${shot.dialogue}` : "台词：无";
         return `第 ${i + 1} 行：
 左侧画面：${shot.cut}，${shot.time}，${shot.shotSize}。${shot.description}
 右侧文字：
@@ -1473,7 +1633,7 @@
 景别：${shot.shotSize}
 动作关键词：${shot.keyword}
 调度关键词：${shot.camera} / ${shot.functionName}
-台词：${shot.dialogue}`;
+${dialogueText}`;
       }).join("\n\n");
 
       return `生成一张用于影片制作的专业分镜故事板图片，画幅比例 ${$("ratio").value}，${$("styleInput").value.trim() || "电影写实风格，真实摄影质感，高质量影视概念设计"}。
@@ -1502,14 +1662,14 @@ ${frameLayout}
 这是一张完整的视频生产型分镜故事板，不是单张电影海报，也不是纯文字表格。画面必须同时包含主分镜板、场景图、光影与氛围三个模块。所有分镜必须保持同一角色、同一场景、同一道具、同一光影方向和同一色调体系的连续性。动作从前一镜自然延续到后一镜，镜头方向清楚，不要跳轴。必须符合导演调度和剪辑语法：先建立空间关系，再推进动作和情绪；遵守 180 度轴线规则、视线匹配、运动方向连续、动作匹配剪辑；每个镜头必须有明确叙事功能和运镜动机。
 
 --- 分镜板（主模块）---
-严格使用 ${group.length} 个 Cut 单元。每个 Cut 单元必须左右 50/50 分栏，左侧 50% 是分镜画面区，只放该 Cut 画面；右侧 50% 是白底文字信息区，只放文字。人物台词必须放在右侧文字信息区展示，不能写在分镜画面内部。右侧文字区必须包含镜号、时序、景别、动作关键词、调度关键词、台词；如无台词写“台词：无”。每个小分镜画面必须严格保持 ${frameAspect} 比例，所有分镜画面尺寸一致，不能出现忽宽忽窄、忽横忽竖、比例变形、画面互相重叠。${frameLayout}
+严格使用 ${group.length} 个 Cut 单元。每个 Cut 单元必须左右 50/50 分栏，左侧 50% 是分镜画面区，只放该 Cut 画面；右侧 50% 是白底文字信息区，只放文字。人物台词必须放在右侧文字信息区展示，不能写在分镜画面内部。每个分镜画面必须严格保持 ${frameAspect} 比例，所有分镜画面尺寸一致。每个分镜画面框左上角必须有黑底白字 Cut 编号。
 
 ${cuts}
 
 --- 场景图（Secondary）---
 位置：分镜板下方，生成 2 张空间参考图。
-1. 俯视场景图：展示主要空间布局、角色起点、动作推进方向、关键道具位置、最终定格位置，只使用短标签和箭头。
-2. 关键空间关系：展示场景纵深、入口、背景结构、主机位方向、光源位置和轴线关系，继承参考图或剧本中的核心环境。
+1. 俯视场景图：展示主要空间布局、角色起点、动作推进方向、关键道具位置、最终定格位置。
+2. 关键空间关系：展示场景纵深、入口、背景结构、主机位方向、光源位置和轴线关系。
 
 --- 光影与氛围（Lighting & Mood）---
 位置：画面底部三栏排列。
@@ -1525,34 +1685,52 @@ clean image, low noise, minimal grain, clean shadows, simplified background text
     }
 
     function buildVideoPrompt(group) {
-      const lines = group.map(shot => `${shot.time}：${shot.shotSize}，${shot.angle}，${shot.camera}。${shot.action}。${shot.blocking}`).join("\n");
-      return `根据当前分镜故事板图片，生成一段电影写实视频。参考图和故事板中的人物、场景、服装、道具、光影、色调必须保持一致。
+      const shotDescriptions = group.map(shot => {
+        const dialogueText = shot.dialogue !== "无" ? ` 台词："${shot.dialogue}"` : "";
+        return `${shot.time}：${shot.shotSize}，${shot.angle}，${shot.camera}。${shot.action}。${dialogueText}`;
+      }).join("\n");
+      const lastShot = group[group.length - 1];
+      const totalDuration = lastShot.time.split('-')[1] || $("duration").value.trim() || "15s";
 
-视频时长：${$("duration").value.trim() || "15s"}
-本组镜头：${group[0].cut} 至 ${group[group.length - 1].cut}
-风格：${$("styleInput").value.trim() || "电影写实风格，真实摄影质感，高质量 MV / 短片镜头"}
+      return `生成一段电影写实风格的连续视频。这是真实的电影镜头剪辑，不是分镜故事板设计稿。
+
+视频信息：
+总时长：${totalDuration}
+镜头数量：${group.length} 个连续镜头（${group[0].cut} 至 ${group[group.length - 1].cut}）
+风格：${$("styleInput").value.trim() || "电影写实风格，真实摄影质感，高质量短片镜头"}
+
+人物与场景：
+角色设定：${$("characterInput").value.trim() || "保持同一角色的五官、发型、服装、体型、年龄和气质完全一致。"}
+场景设定：${$("sceneInput").value.trim() || "保持同一场景的建筑结构、空间方向、材质、道具和光源方向完全一致。"}
 
 参考图使用：
 ${refText()}
 
-人物与场景：
-角色设定：${$("characterInput").value.trim() || "保持故事板中同一角色的五官、发型、服装、体型、年龄和气质一致。"}
-场景设定：${$("sceneInput").value.trim() || "保持故事板中同一场景的建筑结构、空间方向、材质、道具和光源方向一致。"}
+镜头时间线（连续剪辑）：
+${shotDescriptions}
 
-镜头时间线：
-${lines}
-
-视频连续性：
-动作必须从上一镜自然延续到下一镜；保持 180 度轴线、视线匹配、运动方向连续和动作匹配剪辑；不要无故跳轴；不要让角色位置、手部、头部、身体朝向、道具位置在相邻镜头中突然改变。重要动作必须有起因、过程和结果，重要情绪用近景或特写强化。
+视频连续性要求：
+这是一段完整的连续视频，由 ${group.length} 个镜头剪辑而成。每个镜头之间要自然过渡，动作从上一镜自然延续到下一镜。保持 180 度轴线、视线匹配、运动方向连续和动作匹配剪辑。不要无故跳轴，不要让角色位置、手部、头部、身体朝向、道具位置在相邻镜头中突然改变。重要动作必须有起因、过程和结果，重要情绪用近景或特写强化。
 
 镜头语言：
 先建立空间关系，再推进动作和情绪。每一次运镜都必须有明确动机：推进用于靠近人物情绪或发现关键动作，横移用于跟随行动，固定镜头用于压迫、冷静观察或定格。景别要有变化，不要连续使用几乎相同的角度和景别。
 
-画质与光影：
-cinematic realism, smooth camera motion, natural motion, sharp face, sharp hands, clean image, low noise, minimal grain, clean shadows, no dirty noise, no compression artifacts. 光影、色彩和氛围继承故事板，暗部保留层次，背景细节不要抢主体。
+画质要求：
+cinematic realism, smooth camera motion, natural motion, sharp face, sharp hands, clean image, low noise, minimal grain, clean shadows, no dirty noise, no compression artifacts. 光影、色彩和氛围要有电影质感，暗部保留层次，背景细节不要抢主体。
+
+重要提示 - 这是真实的电影视频，不是设计稿：
+画面中只能出现真实的连续场景，不要出现任何分镜故事板的设计元素。具体来说：
+- 不要出现多个分镜格子或画面框
+- 不要出现故事板版式（标题、文字信息栏、Cut编号框）
+- 不要出现黑色边框、分隔线、网格线
+- 不要出现文字标注、镜号标签、时间标记
+- 不要出现俯视场景图、灯光示意图等设计元素
+- 不要出现任何看起来像"设计稿"或"概念图"的元素
+
+这是一段真实拍摄的电影视频，观众看到的应该是连续的故事情节，而不是制作过程中的设计文档。
 
 避免：
-不要换脸；不要换服装；不要改变发型；不要改变场景结构；不要出现多余角色；不要错乱五官；不要畸形手；不要镜头乱跳；不要过度运动模糊；不要低清压缩伪影；不要文字水印。`;
+不要生成分镜故事板；不要出现多个画面格子；不要出现版式框架；不要出现文字标注；不要出现设计稿元素；不要换脸；不要换服装；不要改变发型；不要改变场景结构；不要出现多余角色；不要错乱五官；不要畸形手；不要镜头乱跳；不要过度运动模糊；不要低清压缩伪影；不要文字水印。`;
     }
 
     function renderPrompts() {
@@ -1619,8 +1797,8 @@ cinematic realism, smooth camera motion, natural motion, sharp face, sharp hands
       $("duration").value = "15s";
       $("ratio").value = "9:16";
       $("frameAspect").value = "16:9";
-      $("projectTitle").value = "MV舞蹈分镜故事板";
-      $("styleInput").value = "电影写实风格，真实摄影质感，高质量影视概念设计";
+      $("projectTitle").value = "";
+      $("styleInput").value = "";
       document.querySelectorAll("input[type=file]").forEach(input => input.value = "");
       document.querySelectorAll("[data-desc]").forEach(input => input.value = "");
       document.querySelectorAll(".preview").forEach(preview => {
@@ -2119,14 +2297,93 @@ cinematic realism, smooth camera motion, natural motion, sharp face, sharp hands
           imagePanel.classList.remove("show");
         };
       }
+// RunningHub 配置
+const runningHubToggle = $("runningHubToggle");
+const runningHubPanel = $("runningHubPanel");
+const runningHubClose = $("runningHubPanelClose");
 
+// RunningHub - 切换显示
+if (runningHubToggle && runningHubPanel) {
+  runningHubToggle.onclick = function() {
+    console.log("RunningHub按钮被点击");
+    const isShown = runningHubPanel.classList.contains("show");
+
+    // 关闭其他面板
+    storyboardPanel.classList.remove("show");
+    imagePanel.classList.remove("show");
+
+    // 切换 RunningHub 面板
+    if (isShown) {
+      runningHubPanel.classList.remove("show");
+    } else {
+      runningHubPanel.classList.add("show");
+      loadRunningHubConfig();
+    }
+  };
+}
+
+// RunningHub - 关闭按钮
+if (runningHubClose) {
+  runningHubClose.onclick = function() {
+    runningHubPanel.classList.remove("show");
+  };
+}
+
+// RunningHub - 保存配置
+const runningHubSave = $("runningHubSave");
+if (runningHubSave) {
+  runningHubSave.onclick = function() {
+    const config = {
+      apiKey: $("runningHubApiKey").value.trim(),
+      modelType: $("runningHubModelType").value,
+      enabled: $("runningHubEnabled").checked
+    };
+
+    if (!config.apiKey) {
+      showStatus2("runningHubStatus", "请输入 API Key", "error");
+      return;
+    }
+
+    localStorage.setItem("runningHubConfig", JSON.stringify(config));
+    showStatus2("runningHubStatus", "✅ 配置已保存", "success");
+    toggleRunningHubUI(config.enabled);
+    updateRunningHubModeUI(config.modelType);
+  };
+}
+
+// RunningHub - 测试连接
+const runningHubTest = $("runningHubTest");
+if (runningHubTest) {
+  runningHubTest.onclick = async function() {
+    const apiKey = $("runningHubApiKey").value.trim();
+
+    if (!apiKey) {
+      showStatus2("runningHubStatus", "请先填写 API Key", "error");
+      return;
+    }
+
+    runningHubTest.disabled = true;
+    runningHubTest.textContent = "测试中...";
+    showStatus2("runningHubStatus", "API Key 已填写；真实连通性会在生图时验证", "success");
+
+    runningHubTest.disabled = false;
+    runningHubTest.textContent = "测试连接";
+  };
+}
+
+const runningHubModelType = $("runningHubModelType");
+if (runningHubModelType) {
+  runningHubModelType.onchange = function() {
+    updateRunningHubModeUI(runningHubModelType.value);
+  };
+}
       // 分镜API - 保存配置
       const storyboardSave = $("storyboardApiSave2");
       if (storyboardSave) {
         storyboardSave.onclick = function() {
           const config = {
-            enabled: $("storyboardApiEnabled2").checked,
-            backendUrl: $("storyboardBackendUrl2").value.trim(),
+            enabled: true,
+            backendUrl: "",
             apiUrl: $("storyboardApiUrl2").value.trim(),
             model: $("storyboardApiModel2").value.trim(),
             key: $("storyboardApiKey2").value.trim()
@@ -2408,8 +2665,230 @@ cinematic realism, smooth camera motion, natural motion, sharp face, sharp hands
         btn.textContent = originalText;
       }
     }
+    // RunningHub 生图函数
+    async function generateImageWithRunningHub(prompt) {
+      const btn = $("generateWithRunningHub");
+      const originalText = btn.textContent;
+      const rhConfig = getRunningHubConfig();
 
+      if (!rhConfig || !rhConfig.apiKey) {
+        alert("请先配置 RunningHub API Key！\n\n点击工具栏的「🚀 RunningHub配置」按钮进行配置。");
+        return;
+      }
+
+      try {
+        btn.disabled = true;
+        btn.textContent = "提交任务...";
+
+        const modelType = rhConfig.modelType || "text-to-image";
+        const requestInfo = buildRunningHubOfficialRequest(modelType, prompt);
+        console.log("RunningHub 生图参数:", requestInfo);
+
+        const createResponse = await fetch("https://www.runninghub.cn" + requestInfo.path, {
+          method: "POST",
+          headers: {
+            "Authorization": "Bearer " + rhConfig.apiKey,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(requestInfo.payload)
+        });
+
+        if (!createResponse.ok) {
+          const errorText = await createResponse.text();
+          throw new Error("提交任务失败：" + createResponse.status + " - " + errorText);
+        }
+
+        const createResult = await createResponse.json();
+        console.log("RunningHub 提交任务响应:", createResult);
+
+        if (createResult.errorCode || createResult.errorMessage) {
+          throw new Error(createResult.errorMessage || createResult.errorCode);
+        }
+
+        const taskId = createResult.taskId || (createResult.data && createResult.data.taskId);
+        if (!taskId) {
+          throw new Error("RunningHub 未返回 taskId");
+        }
+
+        btn.textContent = "等待输出...";
+        const output = await waitForRunningHubOutput(rhConfig, taskId, (message) => {
+          btn.textContent = message;
+        });
+        const imageUrl = output.fileUrl || output.url;
+
+        if (imageUrl) {
+          // 显示图像输出窗口
+          var outputArea = $("imageOutputArea");
+          var outputContainer = $("imageOutputContainer");
+          var outputInfo = $("imageOutputInfo");
+          
+          outputArea.style.display = "block";
+          outputInfo.textContent = "RunningHub Task: " + taskId;
+          outputContainer.innerHTML = '<img src="' + imageUrl + '" style="max-width: 100%; max-height: 600px; object-fit: contain; border-radius: 4px;" />';
+          
+          // 保存当前图片URL用于下载
+          outputArea.dataset.imageUrl = imageUrl;
+          outputArea.dataset.model = modelType;
+          outputArea.dataset.size = requestInfo.payload.aspectRatio || requestInfo.payload.size || "3:4";
+          
+          // 滚动到图像输出窗口
+          outputArea.scrollIntoView({ behavior: "smooth", block: "center" });
+        } else {
+          throw new Error("未能从 RunningHub 响应中提取图片");
+        }
+
+      } catch (error) {
+        console.error("RunningHub 生图失败:", error);
+        alert("❌ RunningHub 生图失败：" + error.message + "\n\n请检查：\n1. API Key 是否有效\n2. 图生图模式是否填写了可公网访问的参考图 URL\n3. 浏览器是否被 CORS 拦截\n4. API 额度是否充足");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    }
+
+    function buildRunningHubOfficialRequest(modelType, prompt) {
+      if (modelType === "image-to-image") {
+        const imageUrl = $("runningHubImageUrl").value.trim();
+        if (!imageUrl) {
+          throw new Error("图生图模式需要填写参考图 URL");
+        }
+
+        return {
+          path: "/openapi/v2/rhart-image-g-2-official/image-to-image",
+          payload: {
+            prompt,
+            imageUrls: [imageUrl],
+            aspectRatio: "3:4",
+            resolution: "2k",
+            quality: "medium"
+          }
+        };
+      }
+
+      return {
+        path: "/openapi/v2/rhart-image-g-2-official/text-to-image",
+        payload: {
+          prompt,
+          aspectRatio: "3:4",
+          resolution: "2k",
+          quality: "medium"
+        }
+      };
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    async function runningHubPost(path, config, body) {
+      const response = await fetch("https://www.runninghub.cn" + path, {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer " + config.apiKey,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(path + " 请求失败：" + response.status + " - " + errorText);
+      }
+
+      return response.json();
+    }
+
+    async function waitForRunningHubOutput(config, taskId, onProgress) {
+      for (let i = 1; i <= 60; i++) {
+        onProgress("轮询输出 " + i + "/60");
+
+        const result = await runningHubPost("/openapi/v2/query", config, { taskId });
+        const status = result.status || "";
+
+        if (status === "SUCCESS" && Array.isArray(result.results) && result.results.length > 0) {
+          return result.results[0];
+        }
+
+        if (/fail|error|cancel/i.test(status) || result.errorCode || result.errorMessage) {
+          throw new Error("任务失败：" + (result.errorMessage || result.errorCode || status));
+        }
+
+        await sleep(5000);
+      }
+
+      throw new Error("等待超时：RunningHub 任务 5 分钟内未返回图片输出");
+    }
+
+    // RunningHub 生图按钮事件
+    const rhGenBtn = $("generateWithRunningHub");
+    if (rhGenBtn) {
+      rhGenBtn.onclick = function() {
+        var prompt = $("imagePrompt").value;
+        if (!prompt) {
+          alert("请先生成分镜提示词！");
+          return;
+        }
+        generateImageWithRunningHub(prompt);
+      };
+    }
+
+  // 下载图片按钮
+    var dlBtn = $("downloadImage");
+    if (dlBtn) {
+      dlBtn.onclick = async function() {
+        var outputArea = $("imageOutputArea");
+        var imageUrl = outputArea.dataset.imageUrl;
+        if (!imageUrl) {
+          alert("没有可下载的图片");
+          return;
+        }
+        
+        try {
+          dlBtn.textContent = "下载中...";
+          dlBtn.disabled = true;
+          
+          var response = await fetch(imageUrl);
+          var blob = await response.blob();
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement("a");
+          a.href = url;
+          a.download = "storyboard_" + (outputArea.dataset.model || "image") + "_" + Date.now() + ".png";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        } catch (e) {
+          // 如果 fetch 下载失败，直接打开新窗口
+          window.open(imageUrl, "_blank");
+          alert("直接下载失败，已在新窗口打开图片，请右键保存。");
+        } finally {
+          dlBtn.textContent = "⬇️ 下载图片";
+          dlBtn.disabled = false;
+        }
+      };
+    }
+
+    // 关闭图像输出窗口
+    var closeImgBtn = $("closeImageOutput");
+    if (closeImgBtn) {
+      closeImgBtn.onclick = function() {
+        $("imageOutputArea").style.display = "none";
+      };
+    }
+
+    function getRunningHubConfig() {
+      const saved = localStorage.getItem("runningHubConfig");
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          return null;
+        }
+      }
+      return null;
+    }
     loadApiConfig();
+    loadRunningHubConfig();
     setupFilePreviews();
     setupCopy();
     setupCollapsibleApiPanels();
