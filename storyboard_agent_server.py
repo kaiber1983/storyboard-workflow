@@ -31,7 +31,7 @@ def read_agent_rules():
 
 
 def curated_media_beats(text):
-    source = text or ""
+    source = as_text(text)
     if not ("金像奖" in source and "媒体" in source and "夏晚星" in source):
         return []
 
@@ -65,7 +65,7 @@ def split_script(text):
     if curated:
         return curated
 
-    cleaned = re.sub(r"\s+", " ", text or "").strip()
+    cleaned = re.sub(r"\s+", " ", as_text(text)).strip()
     if not cleaned:
         return []
     parts = [p.strip() for p in re.split(r"(?<=[。！？!?；;])|[\r\n]+", cleaned) if p.strip()]
@@ -93,7 +93,7 @@ def normalize_cut_count(parts, group_size):
 
 
 def number_from_duration(duration_text):
-    match = re.search(r"\d+(?:\.\d+)?", duration_text or "")
+    match = re.search(r"\d+(?:\.\d+)?", as_text(duration_text))
     return float(match.group(0)) if match else 15.0
 
 
@@ -163,20 +163,32 @@ SAFETY_REPLACEMENTS = [
 ]
 
 
+def as_text(value):
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value
+    if isinstance(value, (list, tuple)):
+        return "\n".join(as_text(item) for item in value if as_text(item))
+    if isinstance(value, dict):
+        return json.dumps(value, ensure_ascii=False)
+    return str(value)
+
+
 def needs_safety_guard(text):
-    source = text or ""
+    source = as_text(text)
     return any(term in source for term in RISK_TERMS) or any(term in source for term in MEDIA_TERMS)
 
 
 def sanitize_for_prompt(text):
-    safe = text or ""
+    safe = as_text(text)
     for old, new in SAFETY_REPLACEMENTS:
         safe = safe.replace(old, new)
     return safe
 
 
 def strip_stage_directions(text):
-    cleaned = re.sub(r"\([^)]*\)", " ", text or "")
+    cleaned = re.sub(r"\([^)]*\)", " ", as_text(text))
     cleaned = re.sub(r"（[^）]*）", " ", cleaned)
     cleaned = re.sub(r"\s+", " ", cleaned).strip()
     return cleaned
@@ -319,9 +331,11 @@ def visual_description(text, index, shot_size):
 def collect_refs(refs):
     active = []
     for i, item in enumerate(refs or [], 1):
-        role = item.get("role") or "参考图"
-        name = item.get("name") or "未上传"
-        desc = item.get("desc") or ""
+        if not isinstance(item, dict):
+            item = {"name": item}
+        role = as_text(item.get("role")) or "参考图"
+        name = as_text(item.get("name")) or "未上传"
+        desc = as_text(item.get("desc"))
         if name != "未上传" or desc:
             line = f"图{i}（{role}）：{name}"
             if desc:
@@ -381,7 +395,7 @@ def chat_completion(api, messages, temperature=0.35):
 
 
 def parse_json_object(text):
-    raw = (text or "").strip()
+    raw = as_text(text).strip()
     raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw, flags=re.I | re.S).strip()
     try:
         return json.loads(raw)
@@ -401,8 +415,8 @@ def llm_analyze_script(payload, include_parts=False):
         return None
     api = resolve_api_config(payload)
     group_size = int(payload.get("groupSize") or 5)
-    duration = payload.get("duration") or "15s"
-    script = payload.get("script") or ""
+    duration = as_text(payload.get("duration")) or "15s"
+    script = as_text(payload.get("script"))
     refs = collect_refs(payload.get("refs", []))
     parts_rule = (
         f"\n同时输出 parts：把剧本拆成 {group_size}-18 个连续动作片段，用于分镜 Cut 动作。"
@@ -439,7 +453,7 @@ def infer_character_setting(script, has_refs=False):
     if not has_refs:
         return ""
 
-    text = re.sub(r"\s+", " ", script or "").strip()
+    text = re.sub(r"\s+", " ", as_text(script)).strip()
     if not text:
         return "核心角色：根据剧本主体统一设计，保持同一人物的五官、发型、服装、体型、年龄和气质连续一致。"
 
@@ -485,7 +499,7 @@ def infer_scene_setting(script, has_refs=False):
     if not has_refs:
         return ""
 
-    text = re.sub(r"\s+", " ", script or "").strip()
+    text = re.sub(r"\s+", " ", as_text(script)).strip()
     if not text:
         return "核心场景：根据剧本统一设计一个连续空间，明确入口、纵深、主光方向、道具位置和角色行动区域。"
 
@@ -525,10 +539,10 @@ def infer_scene_setting(script, has_refs=False):
 
 
 def infer_storyboard_title(payload):
-    explicit = (payload.get("projectTitle") or "").strip()
+    explicit = as_text(payload.get("projectTitle")).strip()
     if explicit and explicit != "MV舞蹈分镜故事板":
         return sanitize_for_prompt(explicit)
-    text = f"{payload.get('script', '')} {payload.get('scene', '')}"
+    text = f"{as_text(payload.get('script'))} {as_text(payload.get('scene'))}"
     if re.search(r"金像奖|颁奖|红毯|媒体|记者|名利场", text):
         return "金像奖后台媒体区分镜故事板"
     return "分镜故事板"
@@ -579,20 +593,20 @@ def chunk_shots(shots, size):
 
 
 def _build_storyboard_prompt_legacy(payload, group, group_index, agent_rules):
-    title = payload.get("projectTitle") or "MV舞蹈分镜故事板"
-    duration = payload.get("duration") or "15s"
-    ratio = payload.get("ratio") or "3:4"
-    frame_aspect = payload.get("frameAspect") or "16:9"
-    style = payload.get("style") or "电影写实风格，真实摄影质感，高质量影视概念设计"
-    character = payload.get("character") or "根据剧本统一设计角色，但同一角色的五官、发型、服装、体型、年龄和气质必须保持一致。"
-    scene = payload.get("scene") or "根据剧本统一设计场景，但建筑结构、空间方向、光源方向、材质和氛围必须保持一致。"
+    title = as_text(payload.get("projectTitle")) or "MV舞蹈分镜故事板"
+    duration = as_text(payload.get("duration")) or "15s"
+    ratio = as_text(payload.get("ratio")) or "3:4"
+    frame_aspect = as_text(payload.get("frameAspect")) or "16:9"
+    style = as_text(payload.get("style")) or "电影写实风格，真实摄影质感，高质量影视概念设计"
+    character = as_text(payload.get("character")) or "根据剧本统一设计角色，但同一角色的五官、发型、服装、体型、年龄和气质必须保持一致。"
+    scene = as_text(payload.get("scene")) or "根据剧本统一设计场景，但建筑结构、空间方向、光源方向、材质和氛围必须保持一致。"
 
     # 检查是否有参考图
     refs_list = payload.get("refs", [])
     has_refs = any(ref.get("name") != "未上传" for ref in refs_list if isinstance(ref, dict))
 
     # 如果没有参考图，layout 为空；否则使用默认值
-    layout = payload.get("layout") or ("严格使用专业 MV 分镜故事板版式。" if has_refs else "")
+    layout = as_text(payload.get("layout")) or ("严格使用专业 MV 分镜故事板版式。" if has_refs else "")
 
     refs = collect_refs(refs_list)
     display_times = {shot["cut"]: storyboard_time_range(i, len(group)) for i, shot in enumerate(group)}
@@ -684,10 +698,10 @@ clean image, low noise, minimal grain, clean shadows, simplified background text
 
 def build_storyboard_prompt(payload, group, group_index, agent_rules):
     title = infer_storyboard_title(payload)
-    duration = payload.get("duration") or "15s"
-    ratio = payload.get("ratio") or "3:4"
-    frame_aspect = payload.get("frameAspect") or "16:9"
-    style = payload.get("style") or "电影写实风格，真实摄影质感，高质量影视概念设计"
+    duration = as_text(payload.get("duration")) or "15s"
+    ratio = as_text(payload.get("ratio")) or "3:4"
+    frame_aspect = as_text(payload.get("frameAspect")) or "16:9"
+    style = as_text(payload.get("style")) or "电影写实风格，真实摄影质感，高质量影视概念设计"
     character = sanitize_for_prompt(payload.get("character") or "根据剧本统一设计角色，但同一角色的五官、发型、服装、体型、年龄和气质必须保持一致。")
     scene = sanitize_for_prompt(payload.get("scene") or "根据剧本统一设计场景，但建筑结构、空间方向、材质和氛围必须保持一致。")
     refs_list = payload.get("refs", [])
@@ -797,7 +811,7 @@ clean image, low noise, minimal grain, clean shadows, simplified background text
 
 
 def build_video_prompt(payload, group):
-    style = payload.get("style") or "电影写实风格，真实摄影质感，高质量短片镜头"
+    style = as_text(payload.get("style")) or "电影写实风格，真实摄影质感，高质量短片镜头"
     character = sanitize_for_prompt(payload.get("character") or "保持同一角色的五官、发型、服装、体型、年龄和气质完全一致。")
     scene = sanitize_for_prompt(payload.get("scene") or "保持同一场景的建筑结构、空间方向、材质、道具和光源方向完全一致。")
     refs = collect_refs(payload.get("refs", []))
